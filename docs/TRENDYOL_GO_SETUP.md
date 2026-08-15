@@ -177,6 +177,10 @@ Each delivery is handled the same way regardless of whether it's signed:
 
 **Known gap**: the integration brief never gave Trendyol Go's real webhook signature scheme (algorithm, header name, or where the secret comes from) or the payload schema. HMAC-SHA256/hex is the conventional shape for webhook signing, not a documented fact about Trendyol Go — confirm against developers.tgoapps.com before relying on signature validation for real security. Until `TrendyolGo:WebhookSecret`/`WebhookSignatureHeaderName` are set, **every delivery is accepted unverified** (logged as a warning) rather than blocking real events against a guessed scheme — this is a deliberate tradeoff, not a bug, but it does mean the endpoint has no access control at all until configured. If you expose this publicly before then, consider restricting it at the network/reverse-proxy level (IP allowlist for Trendyol Go's outbound ranges, if published) as a stopgap.
 
+## Polling fallback
+
+The backend also runs a background poller (`OrderPollingBackgroundService`) alongside the webhook endpoint — a safety net for missed webhook deliveries or a webhook Trendyol Go can't reach yet. It calls the exact same order-pull as the "Siparişleri Çek" button, automatically, every ~45 seconds, but **only once `TrendyolGo:SupplierId`/`ApiKey`/`ApiSecret`/`BaseUrl` are all set** — until then it does nothing at all (no requests, no log noise). If a poll comes back reporting Trendyol Go's rate limit, the next one is pushed out to every 3 minutes instead of retrying immediately. This runs automatically with the app — there's nothing to configure beyond the credentials above, and nothing to turn on in the web UI.
+
 ## Troubleshooting
 
 - **"TrendyolGo:SupplierId/ApiKey/ApiSecret/BaseUrl are not fully configured" at startup**: this only happens with `ASPNETCORE_ENVIRONMENT=Production`. Set all four via environment variables (or user-secrets in dev) before deploying.
