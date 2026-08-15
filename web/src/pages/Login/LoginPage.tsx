@@ -1,5 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import { useAuth } from '../../auth/AuthContext';
 import { ApiError } from '../../api/client';
 
@@ -26,36 +35,56 @@ export function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'system-ui' }}>
-      <h1>Asl-Su</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="email">E-posta</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="password">Şifre</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8 }}
-          />
-        </div>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
-        <button type="submit" disabled={isSubmitting} style={{ width: '100%', padding: 10 }}>
-          {isSubmitting ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-        </button>
-      </form>
-    </div>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        px: 2,
+      }}
+    >
+      <Paper elevation={2} sx={{ p: 4, width: '100%', maxWidth: 380, borderRadius: 3 }}>
+        <Stack spacing={1} alignItems="center" sx={{ mb: 3 }}>
+          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+            <WaterDropIcon />
+          </Avatar>
+          <Typography variant="h1" component="h1" sx={{ fontSize: '1.5rem' }}>
+            Asl-Su
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Yönetim paneline giriş yapın
+          </Typography>
+        </Stack>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              id="email"
+              label="E-posta"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              fullWidth
+              autoFocus
+            />
+            <TextField
+              id="password"
+              label="Şifre"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              fullWidth
+            />
+            {error && <Alert severity="error">{error}</Alert>}
+            <Button type="submit" variant="contained" size="large" disabled={isSubmitting} fullWidth>
+              {isSubmitting ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+            </Button>
+          </Stack>
+        </Box>
+      </Paper>
+    </Box>
   );
 }

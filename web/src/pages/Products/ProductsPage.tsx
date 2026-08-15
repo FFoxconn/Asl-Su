@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { createBrand, createCategory, createStore, getBrands, getCategories, getStores } from '../../api/catalog';
 import { createProduct, getProducts } from '../../api/products';
 import { pollBatchRequests, pushProducts, pushSaleStatus, pushStockPrice } from '../../api/trendyolSync';
@@ -12,6 +11,37 @@ import type {
   StockPriceSyncSummary,
 } from '../../types/trendyolSync';
 import { StockPriceEditor } from './StockPriceEditor';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+
+const SYNC_STATUS_COLOR: Record<string, 'default' | 'warning' | 'success' | 'error'> = {
+  NotSynced: 'default',
+  Pending: 'warning',
+  Synced: 'success',
+  Failed: 'error',
+};
 
 export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -103,7 +133,7 @@ export function ProductsPage() {
       setSyncSummary(summary);
       refreshAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Trendyol Go\'ya aktarım başarısız oldu.');
+      setError(e instanceof Error ? e.message : "Trendyol Go'ya aktarım başarısız oldu.");
     } finally {
       setIsPushing(false);
     }
@@ -146,157 +176,250 @@ export function ProductsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '2rem auto', fontFamily: 'system-ui' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Ürünler</h1>
-        <Link to="/">Genel Bakışa Dön</Link>
-      </header>
+    <Box>
+      <Typography variant="h1" gutterBottom>
+        Ürünler
+      </Typography>
 
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-      <section style={{ display: 'flex', gap: 24, marginBottom: 24, fontSize: 14 }}>
-        <form onSubmit={handleCreateStore}>
-          <strong>Şube Ekle</strong>
-          <div>
-            <input value={newStoreName} onChange={(e) => setNewStoreName(e.target.value)} placeholder="Şube adı" />
-            <button type="submit">Ekle</button>
-          </div>
-        </form>
-        <form onSubmit={handleCreateCategory}>
-          <strong>Kategori Ekle</strong>
-          <div>
-            <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Kategori adı" />
-            <button type="submit">Ekle</button>
-          </div>
-        </form>
-        <form onSubmit={handleCreateBrand}>
-          <strong>Marka Ekle</strong>
-          <div>
-            <input value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} placeholder="Marka adı" />
-            <button type="submit">Ekle</button>
-          </div>
-        </form>
-      </section>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={4}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Şube Ekle
+            </Typography>
+            <Box component="form" onSubmit={handleCreateStore} sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                value={newStoreName}
+                onChange={(e) => setNewStoreName(e.target.value)}
+                placeholder="Şube adı"
+                fullWidth
+              />
+              <Button type="submit" variant="outlined">
+                Ekle
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Kategori Ekle
+            </Typography>
+            <Box component="form" onSubmit={handleCreateCategory} sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Kategori adı"
+                fullWidth
+              />
+              <Button type="submit" variant="outlined">
+                Ekle
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Marka Ekle
+            </Typography>
+            <Box component="form" onSubmit={handleCreateBrand} sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="Marka adı"
+                fullWidth
+              />
+              <Button type="submit" variant="outlined">
+                Ekle
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
 
-      <section style={{ marginBottom: 24 }}>
-        <h2>Yeni Ürün</h2>
-        <form onSubmit={handleCreateProduct} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="SKU" required />
-          <input value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="Barkod" required />
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ürün adı" required />
-          <input
-            type="number"
-            value={vatRate}
-            onChange={(e) => setVatRate(e.target.value)}
-            placeholder="KDV %"
-            style={{ width: 70 }}
-          />
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}>
-            <option value="">Kategori seç...</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <select value={brandId} onChange={(e) => setBrandId(e.target.value ? Number(e.target.value) : '')}>
-            <option value="">Marka seç...</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          <button type="submit">Ürün Ekle</button>
-        </form>
-      </section>
+      <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h2" gutterBottom>
+          Yeni Ürün
+        </Typography>
+        <Box component="form" onSubmit={handleCreateProduct}>
+          <Grid container spacing={1.5} alignItems="center">
+            <Grid item xs={12} sm={2}>
+              <TextField size="small" value={sku} onChange={(e) => setSku(e.target.value)} label="SKU" required fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField size="small" value={barcode} onChange={(e) => setBarcode(e.target.value)} label="Barkod" required fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField size="small" value={name} onChange={(e) => setName(e.target.value)} label="Ürün adı" required fullWidth />
+            </Grid>
+            <Grid item xs={6} sm={1.5}>
+              <TextField
+                size="small"
+                type="number"
+                value={vatRate}
+                onChange={(e) => setVatRate(e.target.value)}
+                label="KDV %"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={6} sm={1.5}>
+              <TextField
+                size="small"
+                select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
+                label="Kategori"
+                fullWidth
+              >
+                <MenuItem value="">—</MenuItem>
+                {categories.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={6} sm={1.5}>
+              <TextField
+                size="small"
+                select
+                value={brandId}
+                onChange={(e) => setBrandId(e.target.value ? Number(e.target.value) : '')}
+                label="Marka"
+                fullWidth
+              >
+                <MenuItem value="">—</MenuItem>
+                {brands.map((b) => (
+                  <MenuItem key={b.id} value={b.id}>
+                    {b.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={6} sm={0.5}>
+              <Button type="submit" variant="contained" fullWidth>
+                Ekle
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
 
-      <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2>Ürün Listesi ({products.length})</h2>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handlePushProducts} disabled={isPushing}>
-              {isPushing ? 'Aktarılıyor...' : 'Trendyol Go\'ya Aktar'}
-            </button>
-            <button onClick={handlePushStockPrice} disabled={isPushingStockPrice}>
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={1.5} sx={{ mb: 1.5 }}>
+          <Typography variant="h2">Ürün Listesi ({products.length})</Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button size="small" variant="outlined" startIcon={<CloudUploadOutlinedIcon />} onClick={handlePushProducts} disabled={isPushing}>
+              {isPushing ? 'Aktarılıyor...' : "Trendyol Go'ya Aktar"}
+            </Button>
+            <Button size="small" variant="outlined" startIcon={<Inventory2OutlinedIcon />} onClick={handlePushStockPrice} disabled={isPushingStockPrice}>
               {isPushingStockPrice ? 'Gönderiliyor...' : 'Stok/Fiyat Gönder'}
-            </button>
-            <button onClick={handlePushSaleStatus} disabled={isPushingSaleStatus}>
+            </Button>
+            <Button size="small" variant="outlined" startIcon={<SellOutlinedIcon />} onClick={handlePushSaleStatus} disabled={isPushingSaleStatus}>
               {isPushingSaleStatus ? 'Gönderiliyor...' : 'Satış Durumu Gönder'}
-            </button>
-            <button onClick={handlePollBatchRequests} disabled={isPolling}>
+            </Button>
+            <Button size="small" variant="outlined" startIcon={<FactCheckOutlinedIcon />} onClick={handlePollBatchRequests} disabled={isPolling}>
               {isPolling ? 'Kontrol ediliyor...' : 'Parti Sonuçlarını Kontrol Et'}
-            </button>
-          </div>
-        </div>
-        {syncSummary && (
-          <p style={{ color: syncSummary.failedCount > 0 ? '#b45309' : 'green' }}>
-            Ürünler: {syncSummary.message}
-          </p>
-        )}
-        {stockPriceSummary && (
-          <p style={{ color: stockPriceSummary.failedCount > 0 ? '#b45309' : 'green' }}>
-            Stok/Fiyat: {stockPriceSummary.message}
-          </p>
-        )}
-        {saleStatusSummary && (
-          <p style={{ color: saleStatusSummary.failedCount > 0 ? '#b45309' : 'green' }}>
-            Satış Durumu: {saleStatusSummary.message}
-          </p>
-        )}
-        {pollSummary && (
-          <p style={{ color: pollSummary.failedCount > 0 ? '#b45309' : 'green' }}>
-            Parti Kontrolü: {pollSummary.message} (Tamamlanan: {pollSummary.completedCount}, İşlemde:{' '}
-            {pollSummary.stillProcessingCount}, Başarısız: {pollSummary.failedCount})
-          </p>
-        )}
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>
-              <th>Ad</th>
-              <th>SKU</th>
-              <th>Barkod</th>
-              <th>Aktif</th>
-              <th>Trendyol Go Durumu</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <Fragment key={product.id}>
-                <tr style={{ borderBottom: '1px solid #eee' }}>
-                  <td>{product.name}</td>
-                  <td>{product.sku}</td>
-                  <td>{product.barcode}</td>
-                  <td>{product.isActive ? 'Evet' : 'Hayır'}</td>
-                  <td>{product.tgoSyncStatus}</td>
-                  <td>
-                    <button
-                      onClick={() =>
-                        setExpandedProductId(expandedProductId === product.id ? null : product.id)
-                      }
-                    >
-                      {expandedProductId === product.id ? 'Kapat' : 'Stok/Fiyat'}
-                    </button>
-                  </td>
-                </tr>
-                {expandedProductId === product.id && (
-                  <tr>
-                    <td colSpan={6}>
-                      <StockPriceEditor productId={product.id} stores={stores} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            ))}
-            {products.length === 0 && (
-              <tr>
-                <td colSpan={6}>Henüz ürün eklenmemiş.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </section>
-    </div>
+            </Button>
+          </Stack>
+        </Stack>
+
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          {syncSummary && (
+            <Alert severity={syncSummary.failedCount > 0 ? 'warning' : 'success'}>Ürünler: {syncSummary.message}</Alert>
+          )}
+          {stockPriceSummary && (
+            <Alert severity={stockPriceSummary.failedCount > 0 ? 'warning' : 'success'}>
+              Stok/Fiyat: {stockPriceSummary.message}
+            </Alert>
+          )}
+          {saleStatusSummary && (
+            <Alert severity={saleStatusSummary.failedCount > 0 ? 'warning' : 'success'}>
+              Satış Durumu: {saleStatusSummary.message}
+            </Alert>
+          )}
+          {pollSummary && (
+            <Alert severity={pollSummary.failedCount > 0 ? 'warning' : 'success'}>
+              Parti Kontrolü: {pollSummary.message} (Tamamlanan: {pollSummary.completedCount}, İşlemde:{' '}
+              {pollSummary.stillProcessingCount}, Başarısız: {pollSummary.failedCount})
+            </Alert>
+          )}
+        </Stack>
+
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Ad</TableCell>
+                <TableCell>SKU</TableCell>
+                <TableCell>Barkod</TableCell>
+                <TableCell>Aktif</TableCell>
+                <TableCell>Trendyol Go Durumu</TableCell>
+                <TableCell align="right" />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {products.map((product) => {
+                const isExpanded = expandedProductId === product.id;
+                return (
+                  <Fragment key={product.id}>
+                    <TableRow hover>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{product.sku}</TableCell>
+                      <TableCell>{product.barcode}</TableCell>
+                      <TableCell>{product.isActive ? 'Evet' : 'Hayır'}</TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={product.tgoSyncStatus}
+                          color={SYNC_STATUS_COLOR[product.tgoSyncStatus] ?? 'default'}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                          aria-label="Stok/Fiyat"
+                        >
+                          {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={6} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
+                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                          <Box sx={{ py: 2 }}>
+                            <StockPriceEditor productId={product.id} stores={stores} />
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </Fragment>
+                );
+              })}
+              {products.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                      Henüz ürün eklenmemiş.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
   );
 }

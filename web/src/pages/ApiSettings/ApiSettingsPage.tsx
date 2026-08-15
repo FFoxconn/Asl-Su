@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getTrendyolSettings, testTrendyolConnection } from '../../api/trendyolSettings';
 import type { TrendyolSettings } from '../../types/trendyolSettings';
 import { ApiError } from '../../api/client';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import WifiTetheringIcon from '@mui/icons-material/WifiTethering';
 
 export function ApiSettingsPage() {
   const [settings, setSettings] = useState<TrendyolSettings | null>(null);
@@ -30,47 +39,70 @@ export function ApiSettingsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', fontFamily: 'system-ui' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>API Ayarları</h1>
-        <Link to="/">Genel Bakışa Dön</Link>
-      </header>
-
-      <p style={{ color: '#666', fontSize: 14 }}>
+    <Box sx={{ maxWidth: 640 }}>
+      <Typography variant="h1" gutterBottom>
+        API Ayarları
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Trendyol Go Supplier ID, API Key ve API Secret bilgileri yalnızca sunucu tarafında güvenli
         yapılandırma (user-secrets / ortam değişkenleri) üzerinden ayarlanır — bu ekrandan değiştirilemez.
-      </p>
+      </Typography>
 
-      {loadError && <p style={{ color: 'crimson' }}>{loadError}</p>}
+      {loadError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {loadError}
+        </Alert>
+      )}
 
       {settings && (
-        <table style={{ width: '100%', marginBottom: 24 }}>
-          <tbody>
-            <tr>
-              <td style={{ fontWeight: 600, padding: '8px 0' }}>Supplier ID</td>
-              <td>{settings.supplierId || '—'}</td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 600, padding: '8px 0' }}>API Key</td>
-              <td>{settings.maskedApiKey || '—'}</td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 600, padding: '8px 0' }}>Durum</td>
-              <td style={{ color: settings.isConfigured ? 'green' : 'crimson' }}>
-                {settings.isConfigured ? 'Yapılandırılmış' : 'Yapılandırılmamış'}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
+          <Stack spacing={2}>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">
+                Supplier ID
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {settings.supplierId || '—'}
+              </Typography>
+            </Stack>
+            <Divider />
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">
+                API Key
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {settings.maskedApiKey || '—'}
+              </Typography>
+            </Stack>
+            <Divider />
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Durum
+              </Typography>
+              <Chip
+                size="small"
+                color={settings.isConfigured ? 'success' : 'error'}
+                label={settings.isConfigured ? 'Yapılandırılmış' : 'Yapılandırılmamış'}
+              />
+            </Stack>
+          </Stack>
+        </Paper>
       )}
 
-      <button onClick={handleTestConnection} disabled={isTesting}>
+      <Button
+        variant="contained"
+        startIcon={isTesting ? <CircularProgress size={16} color="inherit" /> : <WifiTetheringIcon />}
+        onClick={handleTestConnection}
+        disabled={isTesting}
+      >
         {isTesting ? 'Test ediliyor...' : 'API Bağlantısını Test Et'}
-      </button>
+      </Button>
 
       {testResult && (
-        <p style={{ marginTop: 16, color: testResult.success ? 'green' : 'crimson' }}>{testResult.message}</p>
+        <Alert severity={testResult.success ? 'success' : 'error'} sx={{ mt: 2 }}>
+          {testResult.message}
+        </Alert>
       )}
-    </div>
+    </Box>
   );
 }
