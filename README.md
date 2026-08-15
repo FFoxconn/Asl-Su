@@ -36,7 +36,7 @@ dotnet run --project src/AslSu.Api
 
 Migrations apply automatically on startup in Development. Swagger UI is at `/swagger`.
 
-Trendyol Go credentials will be read the same way (`dotnet user-secrets` in dev, environment variables in prod) once the integration client lands in a later phase — see `docs/TRENDYOL_GO_SETUP.md`.
+Trendyol Go credentials are read the same way — `dotnet user-secrets` in dev, environment variables in prod — see `docs/TRENDYOL_GO_SETUP.md` for the full list of `TrendyolGo:*` keys and a before-going-live checklist of the endpoint paths that still need confirming against developers.tgoapps.com.
 
 ### Web
 
@@ -66,4 +66,4 @@ Brings up a local SQL Server instance for development.
 
 ## Status
 
-This repository is being built in small, incremental phases — see `docs/PHASES.md` for the current phase and what's next.
+All 16 planned build phases are complete: product/stock/price/order management, the full Trendyol Go Market integration (product sync, stock/price sync, sell/unsell, order pull, order status workflow, webhook + polling fallback, background auto-sync), courier management, and a hardened/tested/documented backend. See `docs/PHASES.md` for the phase-by-phase history and `docs/TRENDYOL_GO_SETUP.md` for the small number of Trendyol Go endpoint paths/schemas that are config-gated pending confirmation against developers.tgoapps.com before going live.

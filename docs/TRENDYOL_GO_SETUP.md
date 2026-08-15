@@ -1,6 +1,6 @@
 # Trendyol Go Setup
 
-Status: partial — this file is filled in incrementally as each phase in `PHASES.md` lands. Sections not yet implemented are marked accordingly.
+Status: all 16 phases in `PHASES.md` are complete. This file covers every feature that shipped; the "Before going live" checklist below lists the small number of Trendyol Go endpoint paths/schemas that are config-gated pending confirmation against developers.tgoapps.com — the app runs correctly without them, those specific calls just report a clear "not configured" message until set.
 
 ## Where credentials come from
 
@@ -188,6 +188,25 @@ The backend also runs a background poller (`OrderPollingBackgroundService`) alon
 ## Logging & secret hygiene
 
 Nothing under `TrendyolGo:*` (or the JWT signing key, or the webhook secret) is ever written to a log line, a `SyncLog`/`WebhookLog`/`BatchRequestLog` row, or an HTTP error response — every error path goes through the sanitized, static Turkish messages in `TrendyolErrorMessages`, and `TrendyolSettingsController`'s GET only ever returns a masked `ApiKey` (never the raw value, and `ApiSecret` isn't even present in the response DTO). Log level configuration lives in code, directly in `Program.cs`'s `UseSerilog(...)` call, rather than an appsettings `"Logging"`/`"Serilog"` section — the `System.Net.Http.HttpClient` category is explicitly pinned to `Warning` there so that `HttpClientFactory`'s built-in request-diagnostics logging can never surface the Basic Auth `Authorization` header, regardless of what any config file says.
+
+## Before going live
+
+The system runs correctly right now with none of this set — every gap below fails closed with a clear Turkish message instead of guessing at a URL or schema — but each one needs to be confirmed against **developers.tgoapps.com** and configured before the corresponding feature will actually talk to Trendyol Go for real. This is every config-gated unknown in one place; each is also covered in more detail in its own section above.
+
+| Config key(s) | What it unlocks | Until set |
+| --- | --- | --- |
+| `TrendyolGo:BaseUrl` | Every outbound call | App refuses to start in Production; Test Connection fails with "Trendyol Go'ya bağlanılamadı" in dev |
+| `TrendyolGo:AgentName`, `TrendyolGo:ExecutorUser` | `x-agentname`/`x-executor-user` headers Trendyol Go validates independently of Basic Auth | Real credentials may still get a 403 |
+| `TrendyolGo:SupplierId`, `ApiKey`, `ApiSecret` | Basic Auth on every call | App refuses to start in Production; everything reports "not configured" in dev |
+| `TrendyolGo:ProductsEndpointPath` | Product creation push (Phase 5) | Every push returns "Ürün oluşturma endpoint'i henüz yapılandırılmamış"; products stay `Failed` |
+| `TrendyolGo:BatchResultEndpointPath` | Batch result polling (Phase 6) | Every pending batch is reported as "still processing" indefinitely |
+| `TrendyolGo:SellUnsellEndpointPath` + real unsell reason codes | Sell/unsell push (Phase 7) | Every push returns "Satışa açma/kapatma endpoint'i henüz yapılandırılmamış"; the reason-code field stays free text |
+| Packages GET response schema confirmation (field names in `TrendyolPackageDto`, `Store.TgoStoreId` mapping) | Correct order/store field mapping (Phase 8) | Order pull still works via the real given endpoint, but field mapping is best-effort and multi-store routing falls back to the first store |
+| `TrendyolGo:AcceptOrderEndpointPath`, `InvoiceOrderEndpointPath`, `ShipOrderEndpointPath` | Notifying Trendyol Go on accept/prepared/deliver (Phase 9) | Local workflow still advances normally; `trendyolNotified` just stays `false` |
+| Substitution-reporting endpoint (if one exists) | Telling Trendyol Go about a product substitution (Phase 10) | Substitution stays local-only — never sent to Trendyol Go |
+| `TrendyolGo:WebhookSecret`, `WebhookSignatureHeaderName` + real signature scheme | Verifying webhook authenticity (Phase 11) | Every delivery is accepted **unverified** (logged as a warning) — no access control on that endpoint until this is set |
+
+None of the above blocks local development, courier management, or the panel's own product/order/user management — those are fully local features independent of Trendyol Go. The background services (polling fallback, auto-sync) simply stay dormant (no requests, no log noise) until `SupplierId`/`ApiKey`/`ApiSecret`/`BaseUrl` are all set.
 
 ## Troubleshooting
 
