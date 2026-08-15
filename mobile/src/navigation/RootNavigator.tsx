@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../auth/AuthContext';
 import { LoginScreen } from '../screens/Login/LoginScreen';
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
+import { ProductsScreen } from '../screens/Products/ProductsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,11 +21,14 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator>
         {isAuthenticated ? (
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <>
+            <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Products" component={ProductsScreen} options={{ title: 'Ürünler' }} />
+          </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

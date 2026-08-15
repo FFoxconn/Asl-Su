@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../auth/AuthContext';
 import { getHealth, type HealthStatus } from '../../api/auth';
 import { ApiError } from '../../api/client';
 
 export function DashboardScreen() {
   const { session, logout } = useAuth();
+  const navigation = useNavigation();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +36,9 @@ export function DashboardScreen() {
         </Text>
       )}
       {!health && !error && <Text>Kontrol ediliyor...</Text>}
+      <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Products' as never)}>
+        <Text style={styles.linkText}>Ürünler →</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -46,4 +51,6 @@ const styles = StyleSheet.create({
   welcome: { marginBottom: 24 },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
   error: { color: 'crimson' },
+  link: { marginTop: 24 },
+  linkText: { color: '#0066cc', fontSize: 16 },
 });

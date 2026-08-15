@@ -1,8 +1,14 @@
 using System.Text;
 using AslSu.Application.Abstractions;
 using AslSu.Application.Auth;
+using AslSu.Application.Catalog;
+using AslSu.Application.Products;
+using AslSu.Application.StockPrice;
 using AslSu.Infrastructure.Auth;
+using AslSu.Infrastructure.Catalog;
 using AslSu.Infrastructure.Persistence;
+using AslSu.Infrastructure.Products;
+using AslSu.Infrastructure.StockPrice;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -44,6 +50,9 @@ builder.Services.AddDbContext<AslSuDbContext>((serviceProvider, options) =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IStockPriceService, StockPriceService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

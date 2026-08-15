@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { getHealth, type HealthStatus } from '../../api/auth';
 import { ApiError } from '../../api/client';
@@ -33,6 +34,9 @@ export function DashboardPage() {
         )}
         {!health && !error && <p>Kontrol ediliyor...</p>}
       </section>
+      <nav>
+        <Link to="/products">Ürünler →</Link>
+      </nav>
     </div>
   );
 }
