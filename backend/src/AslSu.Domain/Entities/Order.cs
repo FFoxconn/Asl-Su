@@ -12,6 +12,7 @@ public class Order
 
     public int StoreId { get; set; }
     public int? CustomerId { get; set; }
+    public int? CourierId { get; set; }
 
     public OrderStatus Status { get; set; }
     public WorkflowStatus WorkflowStatus { get; set; } = WorkflowStatus.New;

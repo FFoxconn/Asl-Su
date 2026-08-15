@@ -1,7 +1,20 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { acceptOrder, deliverOrder, getOrder, getOrders, markOrderPrepared, startPreparingOrder } from '../../api/orders';
+import {
+  acceptOrder,
+  assignCourier,
+  deliverOrder,
+  getOrder,
+  getOrders,
+  markOrderPrepared,
+  startPreparingOrder,
+  substituteOrderItem,
+} from '../../api/orders';
+import { getCouriers } from '../../api/couriers';
+import { getProducts } from '../../api/products';
 import { pullOrders } from '../../api/trendyolSync';
 import type { OrderDetail, OrderListItem, OrderWorkflowActionResult } from '../../types/order';
+import type { Courier } from '../../types/courier';
+import type { Product } from '../../types/product';
 import type { OrderSyncSummary } from '../../types/trendyolSync';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -10,7 +23,9 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Table from '@mui/material/Table';
@@ -25,6 +40,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckIcon from '@mui/icons-material/Check';
 
 const WORKFLOW_ACTIONS: Record<string, { label: string; call: (id: number) => Promise<OrderWorkflowActionResult> }> = {
   New: { label: 'Kabul Et', call: acceptOrder },
@@ -63,6 +79,8 @@ const WORKFLOW_COLOR: Record<string, 'default' | 'info' | 'warning' | 'primary' 
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
+  const [couriers, setCouriers] = useState<Courier[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number]['key']>('all');
   const [isPulling, setIsPulling] = useState(false);
@@ -71,12 +89,19 @@ export function OrdersPage() {
   const [expandedDetail, setExpandedDetail] = useState<OrderDetail | null>(null);
   const [actioningOrderId, setActioningOrderId] = useState<number | null>(null);
   const [actionMessage, setActionMessage] = useState<{ orderId: number; text: string; ok: boolean } | null>(null);
+  const [assigningCourierOrderId, setAssigningCourierOrderId] = useState<number | null>(null);
+  const [substituteDrafts, setSubstituteDrafts] = useState<Record<number, number | ''>>({});
+  const [substitutingItemId, setSubstitutingItemId] = useState<number | null>(null);
 
   function refresh() {
     getOrders().then(setOrders).catch((e) => setError(e instanceof Error ? e.message : 'Siparişler yüklenemedi.'));
   }
 
   useEffect(refresh, []);
+  useEffect(() => {
+    getCouriers().then(setCouriers).catch(() => undefined);
+    getProducts().then(setProducts).catch(() => undefined);
+  }, []);
 
   const filtered = useMemo(() => {
     if (tab === 'all') return orders;
@@ -136,6 +161,38 @@ export function OrdersPage() {
       setActionMessage({ orderId: order.id, ok: false, text: e instanceof Error ? e.message : 'İşlem başarısız oldu.' });
     } finally {
       setActioningOrderId(null);
+    }
+  }
+
+  async function handleAssignCourier(order: OrderListItem, courierId: number) {
+    setAssigningCourierOrderId(order.id);
+    setError(null);
+    try {
+      await assignCourier(order.id, courierId);
+      refresh();
+      if (expandedOrderId === order.id) {
+        setExpandedDetail(await getOrder(order.id));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kurye atanamadı.');
+    } finally {
+      setAssigningCourierOrderId(null);
+    }
+  }
+
+  async function handleSubstituteItem(orderId: number, itemId: number) {
+    const productId = substituteDrafts[itemId];
+    if (productId === '' || productId == null) return;
+
+    setSubstitutingItemId(itemId);
+    setError(null);
+    try {
+      const updated = await substituteOrderItem(orderId, itemId, productId);
+      setExpandedDetail(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'İkame ürün atanamadı.');
+    } finally {
+      setSubstitutingItemId(null);
     }
   }
 
@@ -199,6 +256,7 @@ export function OrdersPage() {
                 <TableCell align="right">Tutar</TableCell>
                 <TableCell>Durum</TableCell>
                 <TableCell>İş Akışı</TableCell>
+                <TableCell>Kurye</TableCell>
                 <TableCell>İşlem</TableCell>
                 <TableCell align="right" />
               </TableRow>
@@ -228,6 +286,25 @@ export function OrdersPage() {
                         />
                       </TableCell>
                       <TableCell>
+                        <Select
+                          size="small"
+                          displayEmpty
+                          value={order.courierId ?? ''}
+                          onChange={(e) => handleAssignCourier(order, Number(e.target.value))}
+                          disabled={assigningCourierOrderId === order.id}
+                          sx={{ minWidth: 140 }}
+                        >
+                          <MenuItem value="" disabled>
+                            Atanmadı
+                          </MenuItem>
+                          {couriers.map((c) => (
+                            <MenuItem key={c.id} value={c.id}>
+                              {c.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+                      <TableCell>
                         {workflowAction ? (
                           <Button
                             size="small"
@@ -249,7 +326,7 @@ export function OrdersPage() {
                     </TableRow>
                     {actionMessage && actionMessage.orderId === order.id && (
                       <TableRow>
-                        <TableCell colSpan={9} sx={{ py: 0.5, border: 'none' }}>
+                        <TableCell colSpan={10} sx={{ py: 0.5, border: 'none' }}>
                           <Alert severity={actionMessage.ok ? 'success' : 'error'} sx={{ py: 0 }}>
                             {actionMessage.text}
                           </Alert>
@@ -257,14 +334,15 @@ export function OrdersPage() {
                       </TableRow>
                     )}
                     <TableRow>
-                      <TableCell colSpan={9} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
+                      <TableCell colSpan={10} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
                         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                           <Box sx={{ py: 2, bgcolor: 'action.hover', borderRadius: 1, px: 2, my: 1 }}>
                             {expandedDetail ? (
                               <>
                                 <Typography variant="body2" sx={{ mb: 1.5 }}>
                                   {expandedDetail.customerPhone && <span>Tel: {expandedDetail.customerPhone} &nbsp;&nbsp;</span>}
-                                  {expandedDetail.customerAddress && <span>Adres: {expandedDetail.customerAddress}</span>}
+                                  {expandedDetail.customerAddress && <span>Adres: {expandedDetail.customerAddress} &nbsp;&nbsp;</span>}
+                                  Kurye: {expandedDetail.courierName ?? 'Atanmadı'}
                                 </Typography>
                                 <Table size="small">
                                   <TableHead>
@@ -273,6 +351,7 @@ export function OrdersPage() {
                                       <TableCell align="right">Adet</TableCell>
                                       <TableCell align="right">Birim Fiyat</TableCell>
                                       <TableCell>Eşleşen Ürün</TableCell>
+                                      <TableCell>İkame Ürün</TableCell>
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
@@ -282,11 +361,44 @@ export function OrdersPage() {
                                         <TableCell align="right">{item.quantity}</TableCell>
                                         <TableCell align="right">{item.unitPrice.toFixed(2)}</TableCell>
                                         <TableCell>
-                                          {item.productId ? (
+                                          {item.isSubstitution ? (
+                                            <Chip size="small" color="info" label={`#${item.productId} (ikame)`} />
+                                          ) : item.productId ? (
                                             <Chip size="small" label={`#${item.productId}`} />
                                           ) : (
                                             <Chip size="small" variant="outlined" color="warning" label="Eşleşmedi" />
                                           )}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Stack direction="row" spacing={1} alignItems="center">
+                                            <Select
+                                              size="small"
+                                              displayEmpty
+                                              value={substituteDrafts[item.id] ?? ''}
+                                              onChange={(e) =>
+                                                setSubstituteDrafts((prev) => ({
+                                                  ...prev,
+                                                  [item.id]: e.target.value === '' ? '' : Number(e.target.value),
+                                                }))
+                                              }
+                                              sx={{ minWidth: 160 }}
+                                            >
+                                              <MenuItem value="">Ürün seç...</MenuItem>
+                                              {products.map((p) => (
+                                                <MenuItem key={p.id} value={p.id}>
+                                                  {p.name}
+                                                </MenuItem>
+                                              ))}
+                                            </Select>
+                                            <IconButton
+                                              size="small"
+                                              aria-label="İkame Ürünü Uygula"
+                                              disabled={substitutingItemId === item.id || substituteDrafts[item.id] == null || substituteDrafts[item.id] === ''}
+                                              onClick={() => handleSubstituteItem(expandedDetail.id, item.id)}
+                                            >
+                                              <CheckIcon fontSize="small" />
+                                            </IconButton>
+                                          </Stack>
                                         </TableCell>
                                       </TableRow>
                                     ))}
@@ -308,7 +420,7 @@ export function OrdersPage() {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={10}>
                     <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
                       Bu kategoride sipariş bulunmuyor.
                     </Typography>

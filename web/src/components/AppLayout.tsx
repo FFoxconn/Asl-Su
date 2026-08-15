@@ -17,6 +17,7 @@ import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import { useAuth } from '../auth/AuthContext';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Genel Bakış', icon: <DashboardOutlinedIcon /> },
   { to: '/products', label: 'Ürünler', icon: <Inventory2OutlinedIcon /> },
   { to: '/orders', label: 'Siparişler', icon: <ReceiptLongOutlinedIcon /> },
+  { to: '/couriers', label: 'Kuryeler', icon: <LocalShippingOutlinedIcon /> },
   { to: '/api-settings', label: 'API Ayarları', icon: <SettingsOutlinedIcon /> },
 ];
 

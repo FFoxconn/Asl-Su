@@ -12,6 +12,7 @@ public class AslSuDbContext(DbContextOptions<AslSuDbContext> options) : DbContex
     public DbSet<Product> Products => Set<Product>();
     public DbSet<StoreProductInventory> StoreProductInventories => Set<StoreProductInventory>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Courier> Couriers => Set<Courier>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<BatchRequestLog> BatchRequestLogs => Set<BatchRequestLog>();

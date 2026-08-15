@@ -150,6 +150,16 @@ dotnet user-secrets set "TrendyolGo:ShipOrderEndpointPath" "..."     # same shap
 
 Until these are set, `trendyolNotified` stays `false` and `trendyolMessage` explains why — but the order still moves through the local workflow normally.
 
+## Alternative product / substitution
+
+When a line item's barcode doesn't match any local product (shown as "Eşleşmedi" in the Orders screen), or a picker needs to swap in a different product entirely, the item detail table has an **"İkame Ürün"** picker. Selecting a product and confirming calls `PUT /api/orders/{orderId}/items/{itemId}/substitute`, which sets the item's `ProductId`/`Barcode` to the chosen product's, flags `IsSubstitution = true`, and remembers the original barcode in `SubstitutedForBarcode`.
+
+**Known gap**: the integration brief never gave a Trendyol Go endpoint for reporting a substitution back to Trendyol — this action is **local only**. If Trendyol Go has a real substitution-reporting call, it isn't wired up yet; confirm against developers.tgoapps.com before assuming Trendyol is aware of any substitution made here.
+
+## Courier management
+
+Kuryeler (couriers) and per-order courier assignment are **not** part of the Trendyol Go integration — they're a local operations feature (who delivers this order), added alongside Phase 10. `GET`/`POST /api/couriers` manage the courier list; `PUT /api/orders/{id}/courier` assigns one to an order. No Trendyol Go calls are involved.
+
 ## Webhook
 
 *(Not yet implemented — lands in Phase 11.)*

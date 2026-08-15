@@ -18,7 +18,9 @@ public record OrderListItemDto(
     string WorkflowStatus,
     DateTime OrderDate,
     decimal? InvoiceAmount,
-    string? CustomerName);
+    string? CustomerName,
+    int? CourierId,
+    string? CourierName);
 
 public record OrderDetailDto(
     int Id,
@@ -35,4 +37,37 @@ public record OrderDetailDto(
     string? CustomerName,
     string? CustomerPhone,
     string? CustomerAddress,
+    int? CourierId,
+    string? CourierName,
     IReadOnlyList<OrderItemDto> Items);
+
+public record AssignCourierRequest(int CourierId);
+
+public record SubstituteOrderItemRequest(int ProductId);
+
+public enum OrderAssignCourierError
+{
+    OrderNotFound,
+    CourierNotFound,
+}
+
+public record AssignCourierResult(bool Success, OrderAssignCourierError? Error)
+{
+    public static readonly AssignCourierResult Ok = new(true, null);
+
+    public static AssignCourierResult Fail(OrderAssignCourierError error) => new(false, error);
+}
+
+public enum OrderItemSubstituteError
+{
+    OrderNotFound,
+    ItemNotFound,
+    ProductNotFound,
+}
+
+public record SubstituteOrderItemResult(bool Success, OrderItemSubstituteError? Error)
+{
+    public static readonly SubstituteOrderItemResult Ok = new(true, null);
+
+    public static SubstituteOrderItemResult Fail(OrderItemSubstituteError error) => new(false, error);
+}

@@ -8,6 +8,8 @@ export interface OrderListItem {
   orderDate: string;
   invoiceAmount: number | null;
   customerName: string | null;
+  courierId: number | null;
+  courierName: string | null;
 }
 
 export interface OrderItem {
@@ -42,5 +44,7 @@ export interface OrderDetail {
   customerName: string | null;
   customerPhone: string | null;
   customerAddress: string | null;
+  courierId: number | null;
+  courierName: string | null;
   items: OrderItem[];
 }

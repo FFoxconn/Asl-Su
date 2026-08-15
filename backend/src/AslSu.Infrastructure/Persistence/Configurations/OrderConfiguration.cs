@@ -31,5 +31,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .WithMany()
             .HasForeignKey(o => o.CustomerId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<Courier>()
+            .WithMany()
+            .HasForeignKey(o => o.CourierId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

@@ -1,6 +1,7 @@
 using AslSu.Application.OrderWorkflow;
 using AslSu.Application.OrderWorkflow.Dtos;
 using AslSu.Application.Orders;
+using AslSu.Application.Orders.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,6 +38,38 @@ public class OrdersController(IOrderService orderService, IOrderWorkflowService 
     [HttpPost("{id:int}/deliver")]
     public Task<IActionResult> Deliver(int id, CancellationToken cancellationToken) =>
         RespondAsync(orderWorkflowService.DeliverAsync(id, cancellationToken));
+
+    [HttpPut("{id:int}/courier")]
+    public async Task<IActionResult> AssignCourier(int id, AssignCourierRequest request, CancellationToken cancellationToken)
+    {
+        var result = await orderService.AssignCourierAsync(id, request.CourierId, cancellationToken);
+        if (result.Success)
+        {
+            return Ok(await orderService.GetByIdAsync(id, cancellationToken));
+        }
+
+        return result.Error == OrderAssignCourierError.OrderNotFound
+            ? NotFound("Sipariş bulunamadı.")
+            : NotFound("Kurye bulunamadı.");
+    }
+
+    [HttpPut("{orderId:int}/items/{itemId:int}/substitute")]
+    public async Task<IActionResult> SubstituteItem(
+        int orderId, int itemId, SubstituteOrderItemRequest request, CancellationToken cancellationToken)
+    {
+        var result = await orderService.SubstituteOrderItemAsync(orderId, itemId, request.ProductId, cancellationToken);
+        if (result.Success)
+        {
+            return Ok(await orderService.GetByIdAsync(orderId, cancellationToken));
+        }
+
+        return result.Error switch
+        {
+            OrderItemSubstituteError.OrderNotFound => NotFound("Sipariş bulunamadı."),
+            OrderItemSubstituteError.ItemNotFound => NotFound("Sipariş kalemi bulunamadı."),
+            _ => NotFound("İkame ürün bulunamadı."),
+        };
+    }
 
     private async Task<IActionResult> RespondAsync(Task<OrderWorkflowActionResult> action)
     {

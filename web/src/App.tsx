@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { ProductsPage } from './pages/Products/ProductsPage';
 import { ApiSettingsPage } from './pages/ApiSettings/ApiSettingsPage';
 import { OrdersPage } from './pages/Orders/OrdersPage';
+import { CouriersPage } from './pages/Couriers/CouriersPage';
 
 function App() {
   return (
@@ -55,6 +56,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <OrdersPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/couriers"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CouriersPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

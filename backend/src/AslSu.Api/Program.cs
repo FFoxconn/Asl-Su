@@ -3,6 +3,7 @@ using AslSu.Application.Abstractions;
 using AslSu.Application.Auth;
 using AslSu.Application.BatchPolling;
 using AslSu.Application.Catalog;
+using AslSu.Application.Couriers;
 using AslSu.Application.OrderSync;
 using AslSu.Application.OrderWorkflow;
 using AslSu.Application.Orders;
@@ -15,6 +16,7 @@ using AslSu.Application.TrendyolSettings;
 using AslSu.Infrastructure.Auth;
 using AslSu.Infrastructure.BatchPolling;
 using AslSu.Infrastructure.Catalog;
+using AslSu.Infrastructure.Couriers;
 using AslSu.Infrastructure.OrderSync;
 using AslSu.Infrastructure.OrderWorkflow;
 using AslSu.Infrastructure.Orders;
@@ -78,6 +80,7 @@ builder.Services.AddScoped<IBatchPollingService, BatchPollingService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
+builder.Services.AddScoped<ICourierService, CourierService>();
 builder.Services.AddTrendyolGoClient(builder.Configuration, builder.Environment);
 
 builder.Services

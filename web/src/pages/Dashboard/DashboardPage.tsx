@@ -13,6 +13,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import { useAuth } from '../../auth/AuthContext';
 import { getHealth, type HealthStatus } from '../../api/auth';
 import { ApiError } from '../../api/client';
@@ -20,6 +21,7 @@ import { ApiError } from '../../api/client';
 const QUICK_LINKS = [
   { to: '/products', label: 'Ürünler', description: 'Ürün, stok ve fiyat yönetimi', icon: <Inventory2OutlinedIcon fontSize="large" /> },
   { to: '/orders', label: 'Siparişler', description: 'Trendyol Go sipariş akışı', icon: <ReceiptLongOutlinedIcon fontSize="large" /> },
+  { to: '/couriers', label: 'Kuryeler', description: 'Kurye listesi ve sipariş ataması', icon: <LocalShippingOutlinedIcon fontSize="large" /> },
   { to: '/api-settings', label: 'API Ayarları', description: 'Bağlantı durumu ve test', icon: <SettingsOutlinedIcon fontSize="large" /> },
 ];
 
