@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import type {
   BatchPollSummary,
+  OrderSyncSummary,
   ProductSyncSummary,
   SaleStatusSyncSummary,
   StockPriceSyncSummary,
@@ -17,3 +18,6 @@ export const pushSaleStatus = () =>
 
 export const pollBatchRequests = () =>
   apiFetch<BatchPollSummary>('/api/trendyol-sync/batch-requests/poll', { method: 'POST' });
+
+export const pullOrders = () =>
+  apiFetch<OrderSyncSummary>('/api/trendyol-sync/orders/pull', { method: 'POST' });

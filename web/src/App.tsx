@@ -5,6 +5,7 @@ import { LoginPage } from './pages/Login/LoginPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { ProductsPage } from './pages/Products/ProductsPage';
 import { ApiSettingsPage } from './pages/ApiSettings/ApiSettingsPage';
+import { OrdersPage } from './pages/Orders/OrdersPage';
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ApiSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <OrdersPage />
               </ProtectedRoute>
             }
           />

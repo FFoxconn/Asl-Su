@@ -5,6 +5,7 @@ using AslSu.Application.Auth.Dtos;
 using AslSu.Domain.Entities;
 using AslSu.Domain.Enums;
 using AslSu.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AslSu.Api.IntegrationTests;
@@ -15,8 +16,10 @@ public static class TestAuthHelper
     private const string Password = "Test-Password-123!";
 
     /// <summary>Seeds a user directly (if not already present) and returns an HttpClient
-    /// carrying a valid Bearer token from a real login round trip.</summary>
-    public static async Task<HttpClient> CreateAuthenticatedClientAsync(AslSuWebApplicationFactory factory)
+    /// carrying a valid Bearer token from a real login round trip. Accepts the base
+    /// WebApplicationFactory type so it also works with a <c>WithWebHostBuilder</c>-derived
+    /// factory (e.g. one that swaps in a fake Trendyol Go client).</summary>
+    public static async Task<HttpClient> CreateAuthenticatedClientAsync(WebApplicationFactory<AslSu.Api.Program> factory)
     {
         using (var scope = factory.Services.CreateScope())
         {

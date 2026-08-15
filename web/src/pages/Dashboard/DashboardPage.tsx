@@ -36,6 +36,7 @@ export function DashboardPage() {
       </section>
       <nav style={{ display: 'flex', gap: 16 }}>
         <Link to="/products">Ürünler →</Link>
+        <Link to="/orders">Siparişler →</Link>
         <Link to="/api-settings">API Ayarları →</Link>
       </nav>
     </div>

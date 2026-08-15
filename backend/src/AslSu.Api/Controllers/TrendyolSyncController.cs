@@ -1,4 +1,5 @@
 using AslSu.Application.BatchPolling;
+using AslSu.Application.OrderSync;
 using AslSu.Application.ProductSync;
 using AslSu.Application.SaleStatusSync;
 using AslSu.Application.StockPriceSync;
@@ -14,7 +15,8 @@ public class TrendyolSyncController(
     IProductSyncService productSyncService,
     IStockPriceSyncService stockPriceSyncService,
     ISaleStatusSyncService saleStatusSyncService,
-    IBatchPollingService batchPollingService) : ControllerBase
+    IBatchPollingService batchPollingService,
+    IOrderSyncService orderSyncService) : ControllerBase
 {
     [HttpPost("products/push")]
     public async Task<IActionResult> PushProducts(CancellationToken cancellationToken) =>
@@ -35,4 +37,8 @@ public class TrendyolSyncController(
     [HttpGet("batch-requests")]
     public async Task<IActionResult> GetBatchRequests([FromQuery] int take, CancellationToken cancellationToken) =>
         Ok(await productSyncService.GetRecentBatchRequestsAsync(take <= 0 ? 50 : take, cancellationToken));
+
+    [HttpPost("orders/pull")]
+    public async Task<IActionResult> PullOrders(CancellationToken cancellationToken) =>
+        Ok(await orderSyncService.PullOrdersAsync(cancellationToken));
 }

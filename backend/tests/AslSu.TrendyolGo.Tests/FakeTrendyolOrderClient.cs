@@ -6,4 +6,7 @@ public class FakeTrendyolOrderClient(Func<HttpResponseMessage> respond) : ITrend
 {
     public Task<HttpResponseMessage> GetPackagesRawAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(respond());
+
+    public Task<TrendyolPackagesOutcome> GetPackagesAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(TrendyolPackagesOutcome.Fail("Not implemented in this fake."));
 }

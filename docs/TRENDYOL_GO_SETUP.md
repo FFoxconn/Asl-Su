@@ -111,9 +111,21 @@ dotnet user-secrets set "TrendyolGo:SellUnsellEndpointPath" "..."   # from devel
 
 Until this is set, every push attempt returns "Satışa açma/kapatma endpoint'i henüz yapılandırılmamış" and the batch is recorded as `Failed`. The reason-code field in both the API (`SetSaleStatusRequest.ReasonCode`) and the web UI is deliberately **free text**, not a closed dropdown — using a value the API doesn't recognize will surface as a 400-class failure through the normal error handling rather than crashing, but you should confirm the real supported codes against developers.tgoapps.com before relying on this for a real unsell.
 
-## Order sync
+## Order sync (pull)
 
-*(Not yet implemented — lands in Phases 8–10.)*
+The web admin panel's **Siparişler** screen (`/orders`) has a **"Siparişleri Çek"** button. It calls `POST /api/trendyol-sync/orders/pull`, which:
+
+1. Calls the packages GET endpoint (same one the connection test probes — path given verbatim in the integration brief, query parameters not sent yet).
+2. Parses the response into packages, best-effort — the root may be a bare array or wrapped under a common paging key (`content`/`packages`/`orders`/`items`/`data`); each package's original JSON is always kept in full regardless of how well the named fields parsed.
+3. Upserts each package by `Order.PackageId`: inserts a new `Order`/`OrderItem`s (and a `Customer` row, if the payload has a customer name) if the package hasn't been seen before, or updates the existing row and replaces its items if it has — **re-pulling never creates a duplicate order or duplicate line items**.
+4. Maps each line's `barcode` to a local `Product` if one exists with that barcode (`OrderItem.ProductId` stays `null` otherwise).
+5. Always stores the original response for that package in `Order.RawPayloadJson`, so nothing is lost even if the field mapping below turns out to be wrong.
+
+**Known gap, same shape as Phases 5–7**: the packages GET endpoint's exact response schema was never given in the integration brief — only its path was. Field names in `TrendyolPackageDto` (id/packageId, orderNumber, status, orderDate, customerFirstName/customerLastName, totalPrice, lines[].barcode, etc.) are a best-effort guess based on common marketplace API conventions, not confirmed against developers.tgoapps.com. Likewise, no store/warehouse field was confirmed in the payload — a package is matched to a `Store` via `Store.TgoStoreId` if the parsed value matches one, otherwise it falls back to the first store in the system. If you have more than one store, confirm the real field and adjust `TrendyolOrderClient`'s parsing before relying on this for multi-store order routing.
+
+`Order.WorkflowStatus` (the local Yeni → Kabul Edildi → Hazırlanıyor → Hazırlandı → Teslim Edildi fulfilment flow) is set to `New` only when an order is first inserted — pulling again never resets it. Advancing it through the workflow is Phase 9.
+
+## Webhook
 
 ## Webhook
 

@@ -32,3 +32,11 @@ export interface SaleStatusSyncSummary {
   batchRequestIds: string[];
   message: string | null;
 }
+
+export interface OrderSyncSummary {
+  totalFetched: number;
+  newCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  message: string | null;
+}
