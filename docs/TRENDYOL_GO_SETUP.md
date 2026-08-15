@@ -185,6 +185,10 @@ Each delivery is handled the same way regardless of whether it's signed:
 
 The backend also runs a background poller (`OrderPollingBackgroundService`) alongside the webhook endpoint — a safety net for missed webhook deliveries or a webhook Trendyol Go can't reach yet. It calls the exact same order-pull as the "Siparişleri Çek" button, automatically, every ~45 seconds, but **only once `TrendyolGo:SupplierId`/`ApiKey`/`ApiSecret`/`BaseUrl` are all set** — until then it does nothing at all (no requests, no log noise). If a poll comes back reporting Trendyol Go's rate limit, the next one is pushed out to every 3 minutes instead of retrying immediately. This runs automatically with the app — there's nothing to configure beyond the credentials above, and nothing to turn on in the web UI.
 
+## Logging & secret hygiene
+
+Nothing under `TrendyolGo:*` (or the JWT signing key, or the webhook secret) is ever written to a log line, a `SyncLog`/`WebhookLog`/`BatchRequestLog` row, or an HTTP error response — every error path goes through the sanitized, static Turkish messages in `TrendyolErrorMessages`, and `TrendyolSettingsController`'s GET only ever returns a masked `ApiKey` (never the raw value, and `ApiSecret` isn't even present in the response DTO). Log level configuration lives in code, directly in `Program.cs`'s `UseSerilog(...)` call, rather than an appsettings `"Logging"`/`"Serilog"` section — the `System.Net.Http.HttpClient` category is explicitly pinned to `Warning` there so that `HttpClientFactory`'s built-in request-diagnostics logging can never surface the Basic Auth `Authorization` header, regardless of what any config file says.
+
 ## Troubleshooting
 
 - **"TrendyolGo:SupplierId/ApiKey/ApiSecret/BaseUrl are not fully configured" at startup**: this only happens with `ASPNETCORE_ENVIRONMENT=Production`. Set all four via environment variables (or user-secrets in dev) before deploying.

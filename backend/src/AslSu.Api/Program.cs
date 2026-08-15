@@ -36,12 +36,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Levels are set explicitly here rather than relying on a "Serilog" appsettings section
+// (there isn't one — appsettings.json only has the vanilla ASP.NET Core "Logging" section,
+// which Serilog.Settings.Configuration does not read, so ReadFrom.Configuration alone would
+// silently be a no-op). The System.Net.Http.HttpClient override is security-relevant:
+// HttpClientFactory's built-in logging handler can emit request headers (including the
+// Trendyol Go Basic Auth Authorization header) at Trace/Debug level, so it's pinned to
+// Warning here as defense-in-depth regardless of what any config file says.
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration
         .ReadFrom.Configuration(context.Configuration)
+        .MinimumLevel.Information()
+        .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+        .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
         .Enrich.FromLogContext()
         .WriteTo.Console());
 
