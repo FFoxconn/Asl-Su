@@ -14,18 +14,35 @@ Monorepo for the Asl-Su product/order management system with a Trendyol Go Marke
 
 ### Backend
 
+First-time setup — the app fails fast at startup if these aren't set (never put them in `appsettings.json`):
+
+```
+cd backend/src/AslSu.Api
+dotnet user-secrets set "Jwt:SigningKey" "<a long random string>"
+dotnet user-secrets set "ConnectionStrings:Default" "Server=localhost,1433;Database=AslSu;User Id=sa;Password=<your local SQL Server password>;TrustServerCertificate=True"
+
+# Optional: seeds one admin account on first run against an empty Users table (Development only)
+dotnet user-secrets set "Seed:AdminEmail" "admin@example.com"
+dotnet user-secrets set "Seed:AdminPassword" "<a password>"
+```
+
+Then, with `docker-compose up -d` running for SQL Server:
+
 ```
 cd backend
 dotnet build
 dotnet run --project src/AslSu.Api
 ```
 
-Trendyol Go credentials and JWT signing key are read from `dotnet user-secrets` (dev) or environment variables (prod) — never from `appsettings.json`. See `docs/TRENDYOL_GO_SETUP.md`.
+Migrations apply automatically on startup in Development. Swagger UI is at `/swagger`.
+
+Trendyol Go credentials will be read the same way (`dotnet user-secrets` in dev, environment variables in prod) once the integration client lands in a later phase — see `docs/TRENDYOL_GO_SETUP.md`.
 
 ### Web
 
 ```
 cd web
+cp .env.example .env   # points VITE_API_BASE_URL at your local backend
 npm install
 npm run dev
 ```
@@ -34,6 +51,7 @@ npm run dev
 
 ```
 cd mobile
+cp .env.example .env   # points EXPO_PUBLIC_API_BASE_URL at your local backend
 npm install
 npx expo start
 ```
