@@ -1,17 +1,21 @@
 using System.Text;
 using AslSu.Application.Abstractions;
 using AslSu.Application.Auth;
+using AslSu.Application.BatchPolling;
 using AslSu.Application.Catalog;
 using AslSu.Application.ProductSync;
 using AslSu.Application.Products;
 using AslSu.Application.StockPrice;
+using AslSu.Application.StockPriceSync;
 using AslSu.Application.TrendyolSettings;
 using AslSu.Infrastructure.Auth;
+using AslSu.Infrastructure.BatchPolling;
 using AslSu.Infrastructure.Catalog;
 using AslSu.Infrastructure.Persistence;
 using AslSu.Infrastructure.ProductSync;
 using AslSu.Infrastructure.Products;
 using AslSu.Infrastructure.StockPrice;
+using AslSu.Infrastructure.StockPriceSync;
 using AslSu.Infrastructure.TrendyolSettings;
 using AslSu.TrendyolGo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -60,6 +64,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IStockPriceService, StockPriceService>();
 builder.Services.AddScoped<ITrendyolSettingsService, TrendyolSettingsService>();
 builder.Services.AddScoped<IProductSyncService, ProductSyncService>();
+builder.Services.AddScoped<IStockPriceSyncService, StockPriceSyncService>();
+builder.Services.AddScoped<IBatchPollingService, BatchPollingService>();
 builder.Services.AddTrendyolGoClient(builder.Configuration, builder.Environment);
 
 builder.Services

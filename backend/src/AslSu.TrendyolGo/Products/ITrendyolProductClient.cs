@@ -1,3 +1,5 @@
+using AslSu.TrendyolGo.BatchRequests;
+
 namespace AslSu.TrendyolGo.Products;
 
 public interface ITrendyolProductClient

@@ -17,5 +17,6 @@ public class StoreConfiguration : IEntityTypeConfiguration<Store>
         builder.HasIndex(s => s.Code).IsUnique();
 
         builder.Property(s => s.Address).HasMaxLength(500);
+        builder.Property(s => s.TgoStoreId).HasMaxLength(100);
     }
 }

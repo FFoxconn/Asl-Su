@@ -34,6 +34,12 @@ public class TrendyolGoOptions
     /// reports itself as such — until this is set from developers.tgoapps.com.</summary>
     public string ProductsEndpointPath { get; set; } = string.Empty;
 
+    /// <summary>Path template of the getBatchRequestResult endpoint, with a
+    /// <c>{batchRequestId}</c> placeholder — e.g. "/integrator/.../batch-requests/{batchRequestId}".
+    /// Never given in the integration brief, same reasoning as ProductsEndpointPath: left
+    /// unset rather than guessed, until confirmed against developers.tgoapps.com.</summary>
+    public string BatchResultEndpointPath { get; set; } = string.Empty;
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(SupplierId) &&
         !string.IsNullOrWhiteSpace(ApiKey) &&

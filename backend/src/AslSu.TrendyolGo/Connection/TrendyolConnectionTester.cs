@@ -30,26 +30,22 @@ public class TrendyolConnectionTester(ITrendyolOrderClient orderClient, IOptions
         catch (TrendyolAuthException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             return new TrendyolConnectionTestResult(
-                TrendyolConnectionStatus.Unauthorized,
-                "API Key / API Secret / Supplier ID bilgilerini kontrol edin.",
-                (int)ex.StatusCode);
+                TrendyolConnectionStatus.Unauthorized, TrendyolErrorMessages.CheckCredentials, (int)ex.StatusCode);
         }
         catch (TrendyolAuthException ex)
         {
             return new TrendyolConnectionTestResult(
-                TrendyolConnectionStatus.Forbidden,
-                "User-Agent veya yetkilendirme bilgilerini kontrol edin.",
-                (int)ex.StatusCode);
+                TrendyolConnectionStatus.Forbidden, TrendyolErrorMessages.CheckHeaders, (int)ex.StatusCode);
         }
         catch (TrendyolRateLimitException ex)
         {
             return new TrendyolConnectionTestResult(
-                TrendyolConnectionStatus.RateLimited, "API rate limitine ulaşıldı.", (int)ex.StatusCode);
+                TrendyolConnectionStatus.RateLimited, TrendyolErrorMessages.RateLimited, (int)ex.StatusCode);
         }
         catch (TrendyolApiException ex) when ((int)ex.StatusCode >= 500)
         {
             return new TrendyolConnectionTestResult(
-                TrendyolConnectionStatus.ServiceError, "Trendyol Go servisinde geçici hata.", (int)ex.StatusCode);
+                TrendyolConnectionStatus.ServiceError, TrendyolErrorMessages.ServiceError, (int)ex.StatusCode);
         }
         catch (TrendyolApiException ex)
         {
@@ -59,7 +55,7 @@ public class TrendyolConnectionTester(ITrendyolOrderClient orderClient, IOptions
         catch (HttpRequestException)
         {
             return new TrendyolConnectionTestResult(
-                TrendyolConnectionStatus.Unknown, "Trendyol Go'ya bağlanılamadı. BaseUrl bilgisini kontrol edin.", null);
+                TrendyolConnectionStatus.Unknown, TrendyolErrorMessages.ConnectionFailed, null);
         }
     }
 }

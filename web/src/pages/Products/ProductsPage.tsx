@@ -2,10 +2,10 @@ import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { createBrand, createCategory, createStore, getBrands, getCategories, getStores } from '../../api/catalog';
 import { createProduct, getProducts } from '../../api/products';
-import { pushProducts } from '../../api/trendyolSync';
+import { pollBatchRequests, pushProducts, pushStockPrice } from '../../api/trendyolSync';
 import type { Brand, Category, Store } from '../../types/catalog';
 import type { Product } from '../../types/product';
-import type { ProductSyncSummary } from '../../types/trendyolSync';
+import type { BatchPollSummary, ProductSyncSummary, StockPriceSyncSummary } from '../../types/trendyolSync';
 import { StockPriceEditor } from './StockPriceEditor';
 
 export function ProductsPage() {
@@ -27,6 +27,10 @@ export function ProductsPage() {
   const [newBrandName, setNewBrandName] = useState('');
   const [syncSummary, setSyncSummary] = useState<ProductSyncSummary | null>(null);
   const [isPushing, setIsPushing] = useState(false);
+  const [stockPriceSummary, setStockPriceSummary] = useState<StockPriceSyncSummary | null>(null);
+  const [isPushingStockPrice, setIsPushingStockPrice] = useState(false);
+  const [pollSummary, setPollSummary] = useState<BatchPollSummary | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
 
   function refreshAll() {
     getProducts().then(setProducts).catch((e) => setError(String(e.message ?? e)));
@@ -95,6 +99,30 @@ export function ProductsPage() {
       setError(e instanceof Error ? e.message : 'Trendyol Go\'ya aktarım başarısız oldu.');
     } finally {
       setIsPushing(false);
+    }
+  }
+
+  async function handlePushStockPrice() {
+    setIsPushingStockPrice(true);
+    setStockPriceSummary(null);
+    try {
+      setStockPriceSummary(await pushStockPrice());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Stok/fiyat aktarımı başarısız oldu.');
+    } finally {
+      setIsPushingStockPrice(false);
+    }
+  }
+
+  async function handlePollBatchRequests() {
+    setIsPolling(true);
+    setPollSummary(null);
+    try {
+      setPollSummary(await pollBatchRequests());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Parti sonuçları kontrol edilemedi.');
+    } finally {
+      setIsPolling(false);
     }
   }
 
@@ -167,13 +195,32 @@ export function ProductsPage() {
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>Ürün Listesi ({products.length})</h2>
-          <button onClick={handlePushProducts} disabled={isPushing}>
-            {isPushing ? 'Aktarılıyor...' : 'Trendyol Go\'ya Aktar'}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handlePushProducts} disabled={isPushing}>
+              {isPushing ? 'Aktarılıyor...' : 'Trendyol Go\'ya Aktar'}
+            </button>
+            <button onClick={handlePushStockPrice} disabled={isPushingStockPrice}>
+              {isPushingStockPrice ? 'Gönderiliyor...' : 'Stok/Fiyat Gönder'}
+            </button>
+            <button onClick={handlePollBatchRequests} disabled={isPolling}>
+              {isPolling ? 'Kontrol ediliyor...' : 'Parti Sonuçlarını Kontrol Et'}
+            </button>
+          </div>
         </div>
         {syncSummary && (
           <p style={{ color: syncSummary.failedCount > 0 ? '#b45309' : 'green' }}>
-            {syncSummary.message}
+            Ürünler: {syncSummary.message}
+          </p>
+        )}
+        {stockPriceSummary && (
+          <p style={{ color: stockPriceSummary.failedCount > 0 ? '#b45309' : 'green' }}>
+            Stok/Fiyat: {stockPriceSummary.message}
+          </p>
+        )}
+        {pollSummary && (
+          <p style={{ color: pollSummary.failedCount > 0 ? '#b45309' : 'green' }}>
+            Parti Kontrolü: {pollSummary.message} (Tamamlanan: {pollSummary.completedCount}, İşlemde:{' '}
+            {pollSummary.stillProcessingCount}, Başarısız: {pollSummary.failedCount})
           </p>
         )}
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
+using AslSu.TrendyolGo.BatchRequests;
 using AslSu.TrendyolGo.Configuration;
 using AslSu.TrendyolGo.Connection;
 using AslSu.TrendyolGo.Http;
+using AslSu.TrendyolGo.Inventory;
 using AslSu.TrendyolGo.Orders;
 using AslSu.TrendyolGo.Products;
 using Microsoft.Extensions.Configuration;
@@ -38,6 +40,8 @@ public static class ServiceCollectionExtensions
 
         ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolOrderClient, TrendyolOrderClient>());
         ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolProductClient, TrendyolProductClient>());
+        ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolInventoryClient, TrendyolInventoryClient>());
+        ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolBatchResultClient, TrendyolBatchResultClient>());
 
         services.AddScoped<ITrendyolConnectionTester, TrendyolConnectionTester>();
 

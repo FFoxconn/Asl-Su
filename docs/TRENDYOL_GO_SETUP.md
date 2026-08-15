@@ -69,9 +69,28 @@ dotnet user-secrets set "TrendyolGo:ProductsEndpointPath" "..."   # from develop
 
 Until this is set, every push attempt returns a clear "Ürün oluşturma endpoint'i henüz yapılandırılmamış" failure and products stay `Failed` — this is expected, not a bug. Once you have the real path (and, if it differs from what `TrendyolProductPayload` assumes, the real request schema) from the docs, set it and product push will start working; the request body shape may also need adjusting to match the docs at that point (see `TrendyolProductPayload`'s code comments).
 
-## Stock / price sync
+## Stock / price sync (push)
 
-*(Not yet implemented — lands in Phases 6–7.)*
+The Products page has a **"Stok/Fiyat Gönder"** button. It calls `POST /api/trendyol-sync/stock-price/push`, which:
+
+1. Finds only `StoreProductInventory` rows that have never been synced, or whose `Quantity`/`SalePrice` differ from the last-synced values — a true delta push, not a full resend every time.
+2. Splits them into batches (same `BatchSplitter` as product sync) and submits each to the **real** price-and-inventory endpoint (`POST /integrator/product/grocery/suppliers/{sellerId}/products/price-and-inventory`, given verbatim in the integration brief — no config-gating needed here, unlike product creation).
+3. On a successful batch, advances that row's last-synced markers so it won't be resent until it changes again. On failure, the row is left as "changed" so it's retried on the next push.
+4. Records one row per batch in `BatchRequestLogs`, same as product sync.
+
+`Store.TgoStoreId` exists in the schema as of this phase for mapping a branch to Trendyol Go's own store/warehouse identifier, if the payload needs one. There's no update endpoint or UI for it yet — only `POST /api/stores` (create) exists — so for now it has to be set directly against the database if/when it's needed.
+
+## Batch result polling
+
+The Products page has a **"Parti Sonuçlarını Kontrol Et"** button. It calls `POST /api/trendyol-sync/batch-requests/poll`, which checks every `BatchRequestLog` row still `Pending` against Trendyol Go's batch-result endpoint and updates its status/success count/failure count/failure reasons.
+
+**Known gap**: like createProducts, the exact `getBatchRequestResult` endpoint path was never given in the integration brief. It's config-gated the same way:
+
+```
+dotnet user-secrets set "TrendyolGo:BatchResultEndpointPath" "..."   # from developers.tgoapps.com, with a {batchRequestId} placeholder, e.g. "/integrator/.../batch-requests/{batchRequestId}"
+```
+
+Until this is set, polling reports every pending batch as "still processing" rather than a hard failure (since a batch may genuinely still be processing on Trendyol's side — we just can't tell yet). Once set, the response's assumed `{status, successCount, failureCount, failureReasons}` shape may also need adjusting to match the real docs (see `TrendyolBatchResultClient`'s code comments) — it currently falls back to an "Unknown" status rather than crashing if the shape doesn't match.
 
 ## Order sync
 
