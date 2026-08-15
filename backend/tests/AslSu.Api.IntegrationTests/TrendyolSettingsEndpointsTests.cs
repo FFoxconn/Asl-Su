@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using AslSu.Application.TrendyolSettings.Dtos;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace AslSu.Api.IntegrationTests;
@@ -59,5 +62,34 @@ public class TrendyolSettingsEndpointsTests : IClassFixture<AslSuWebApplicationF
         var response = await client.PostAsync("/api/trendyol-settings/test-connection", null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetSettings_WithRealCredentialsConfigured_NeverReturnsTheRawApiSecret()
+    {
+        const string apiSecret = "super-secret-value-should-never-leak";
+        using var configuredFactory = _factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["TrendyolGo:SupplierId"] = "123456",
+                ["TrendyolGo:ApiKey"] = "some-api-key-value",
+                ["TrendyolGo:ApiSecret"] = apiSecret,
+                ["TrendyolGo:BaseUrl"] = "https://example.invalid",
+            });
+        }));
+        var client = await TestAuthHelper.CreateAuthenticatedClientAsync(configuredFactory);
+
+        var response = await client.GetAsync("/api/trendyol-settings");
+        var rawBody = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain(apiSecret, rawBody);
+        var settings = await JsonSerializer.DeserializeAsync<TrendyolSettingsDto>(
+            new MemoryStream(Encoding.UTF8.GetBytes(rawBody)),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(settings);
+        Assert.True(settings!.IsConfigured);
+        Assert.NotEqual("some-api-key-value", settings.MaskedApiKey);
     }
 }
