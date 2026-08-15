@@ -60,6 +60,22 @@ public class TrendyolGoOptions
     /// <c>{packageId}</c> placeholder. Same reasoning as AcceptOrderEndpointPath.</summary>
     public string ShipOrderEndpointPath { get; set; } = string.Empty;
 
+    /// <summary>Shared secret Trendyol Go signs webhook deliveries with. Never given in the
+    /// integration brief — no webhook signature scheme (algorithm, header name, or secret
+    /// source) was documented. Left unset by design: until confirmed against
+    /// developers.tgoapps.com, the webhook endpoint accepts deliveries unverified rather than
+    /// silently rejecting real ones or trusting a guessed scheme. Set together with
+    /// <see cref="WebhookSignatureHeaderName"/>.</summary>
+    public string WebhookSecret { get; set; } = string.Empty;
+
+    /// <summary>HTTP header Trendyol Go sends the webhook signature in (e.g. an HMAC of the
+    /// request body) — name unconfirmed, left unset for the same reason as
+    /// <see cref="WebhookSecret"/>.</summary>
+    public string WebhookSignatureHeaderName { get; set; } = string.Empty;
+
+    public bool IsWebhookSignatureConfigured =>
+        !string.IsNullOrWhiteSpace(WebhookSecret) && !string.IsNullOrWhiteSpace(WebhookSignatureHeaderName);
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(SupplierId) &&
         !string.IsNullOrWhiteSpace(ApiKey) &&

@@ -13,6 +13,7 @@ using AslSu.Application.SaleStatusSync;
 using AslSu.Application.StockPrice;
 using AslSu.Application.StockPriceSync;
 using AslSu.Application.TrendyolSettings;
+using AslSu.Application.Webhooks;
 using AslSu.Infrastructure.Auth;
 using AslSu.Infrastructure.BatchPolling;
 using AslSu.Infrastructure.Catalog;
@@ -27,6 +28,7 @@ using AslSu.Infrastructure.SaleStatusSync;
 using AslSu.Infrastructure.StockPrice;
 using AslSu.Infrastructure.StockPriceSync;
 using AslSu.Infrastructure.TrendyolSettings;
+using AslSu.Infrastructure.Webhooks;
 using AslSu.TrendyolGo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -81,6 +83,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
 builder.Services.AddScoped<ICourierService, CourierService>();
+builder.Services.AddScoped<IWebhookService, WebhookService>();
 builder.Services.AddTrendyolGoClient(builder.Configuration, builder.Environment);
 
 builder.Services

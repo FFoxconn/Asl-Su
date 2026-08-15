@@ -162,7 +162,20 @@ Kuryeler (couriers) and per-order courier assignment are **not** part of the Tre
 
 ## Webhook
 
-*(Not yet implemented — lands in Phase 11.)*
+Trendyol Go can deliver events (e.g. order status changes) to `POST /api/webhooks/trendyol-go`. This endpoint is intentionally the **only** one in this API that isn't behind the JWT pipeline — Trendyol Go doesn't have our login tokens — so it's reachable with no `Authorization` header at all.
+
+Each delivery is handled the same way regardless of whether it's signed:
+
+1. **Signature check** — only enforced if you've set both of:
+   ```
+   dotnet user-secrets set "TrendyolGo:WebhookSecret" "..."               # from developers.tgoapps.com
+   dotnet user-secrets set "TrendyolGo:WebhookSignatureHeaderName" "..."  # e.g. "X-Trendyol-Signature" — confirm the real name
+   ```
+   When set, a delivery must carry that header with a valid `HMAC-SHA256(secret, rawBody)` (hex-encoded) or the request is rejected with `401`.
+2. **Dedupe** — an event id is extracted best-effort from the payload (`eventId`/`id`/`webhookId`/`packageId`/`orderNumber`, whichever is present); if none of those are found, a hash of the raw body is used instead. A delivery with an id already seen in `WebhookLogs` is acknowledged (`200`) without being reprocessed — safe against Trendyol's own retries.
+3. **Order refresh** — a new delivery triggers the same order-pull used by the "Siparişleri Çek" button, so any order the event refers to (and anything else that's changed) gets refreshed. The delivery itself is recorded in `WebhookLogs` with its raw payload and `Processed`/`Failed` outcome either way.
+
+**Known gap**: the integration brief never gave Trendyol Go's real webhook signature scheme (algorithm, header name, or where the secret comes from) or the payload schema. HMAC-SHA256/hex is the conventional shape for webhook signing, not a documented fact about Trendyol Go — confirm against developers.tgoapps.com before relying on signature validation for real security. Until `TrendyolGo:WebhookSecret`/`WebhookSignatureHeaderName` are set, **every delivery is accepted unverified** (logged as a warning) rather than blocking real events against a guessed scheme — this is a deliberate tradeoff, not a bug, but it does mean the endpoint has no access control at all until configured. If you expose this publicly before then, consider restricting it at the network/reverse-proxy level (IP allowlist for Trendyol Go's outbound ranges, if published) as a stopgap.
 
 ## Troubleshooting
 
