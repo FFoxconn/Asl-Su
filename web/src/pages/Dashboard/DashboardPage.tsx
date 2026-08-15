@@ -34,8 +34,9 @@ export function DashboardPage() {
         )}
         {!health && !error && <p>Kontrol ediliyor...</p>}
       </section>
-      <nav>
+      <nav style={{ display: 'flex', gap: 16 }}>
         <Link to="/products">Ürünler →</Link>
+        <Link to="/api-settings">API Ayarları →</Link>
       </nav>
     </div>
   );

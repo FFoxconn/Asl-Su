@@ -12,22 +12,44 @@ Log in to the Trendyol Go partner panel at **partner.tgomarket.com** → **Kulla
 
 These three values authenticate every backend call to Trendyol Go. Rotate them from that same screen if they're ever exposed (e.g. shared in a screenshot or chat).
 
+You'll also need three values that are **not** shown on that screen and must be confirmed against the official docs at **developers.tgoapps.com** before going live:
+
+- **BaseUrl** — the Trendyol Go API's base domain. Deliberately left unset in this project rather than guessed.
+- **AgentName** — the value the docs require for the `x-agentname` header.
+- **ExecutorUser** — the value the docs require for the `x-executor-user` header.
+
 ## Where credentials go in this project
 
-Credentials are never committed to the repository and never hardcoded. *(Wiring described below lands in Phase 4 — `AslSu.TrendyolGo` + configuration.)*
+Credentials are never committed to the repository, never hardcoded, and never exposed to the web or mobile apps — only the backend (`AslSu.TrendyolGo` project) holds them, injected via `TrendyolGoOptions`.
 
-- **Local development**: `dotnet user-secrets` on `AslSu.Api`, e.g.
+- **Local development**: `dotnet user-secrets` on `AslSu.Api`:
   ```
+  cd backend/src/AslSu.Api
   dotnet user-secrets set "TrendyolGo:SupplierId" "..."
   dotnet user-secrets set "TrendyolGo:ApiKey" "..."
   dotnet user-secrets set "TrendyolGo:ApiSecret" "..."
+  dotnet user-secrets set "TrendyolGo:BaseUrl" "..."       # from developers.tgoapps.com
+  dotnet user-secrets set "TrendyolGo:AgentName" "..."     # from developers.tgoapps.com
+  dotnet user-secrets set "TrendyolGo:ExecutorUser" "..."  # from developers.tgoapps.com
   ```
-- **Production**: environment variables (`TrendyolGo__SupplierId`, `TrendyolGo__ApiKey`, `TrendyolGo__ApiSecret`) or a secret manager (e.g. Azure Key Vault) — same configuration binding either way.
-- `appsettings.json` only ever contains non-secret structure (base URL, timeouts) — never the key/secret/supplier id.
+- **Production**: environment variables (`TrendyolGo__SupplierId`, `TrendyolGo__ApiKey`, `TrendyolGo__ApiSecret`, `TrendyolGo__BaseUrl`, `TrendyolGo__AgentName`, `TrendyolGo__ExecutorUser`) or a secret manager (e.g. Azure Key Vault) — same configuration binding either way.
+- `appsettings.json` only ever contains non-secret structure — never any of the above.
+- The app itself only *requires* these to be set in a **Production** environment (`ASPNETCORE_ENVIRONMENT=Production`) — it boots fine without them in Development/Testing so the rest of the system (products, orders, auth) keeps working before Trendyol Go is configured.
 
 ## Testing the connection
 
-*(Not yet implemented — lands in Phase 4.)* Once wired, the web admin panel's **API Ayarları** screen will have a "Test Bağlantısı" button that calls the backend, which calls Trendyol Go with the configured credentials and reports back a plain-language result (success, or which of Key/Secret/Supplier ID/headers/rate-limit/Trendyol-service-issue is likely wrong).
+The web admin panel's **API Ayarları** screen (`/api-settings`) shows the configured Supplier ID and a masked API Key (read-only — this screen cannot change credentials), plus an **"API Bağlantısını Test Et"** button. It calls `POST /api/trendyol-settings/test-connection` on the backend, which calls Trendyol Go with the configured credentials and headers and reports back one of:
+
+- **Success** — "Trendyol Go API bağlantısı başarılı."
+- **401** — "API Key / API Secret / Supplier ID bilgilerini kontrol edin."
+- **403** — "User-Agent veya yetkilendirme bilgilerini kontrol edin."
+- **429** — "API rate limitine ulaşıldı."
+- **5xx** — "Trendyol Go servisinde geçici hata."
+- **Not configured** — "Trendyol Go bağlantı bilgileri henüz yapılandırılmamış."
+
+Every test-connection attempt is recorded in the `SyncLogs` table (operation, endpoint, status code, duration, sanitized error message — never the credentials themselves).
+
+The probe currently calls the packages (orders) GET endpoint given in the integration brief, since Trendyol Go doesn't have a dedicated "ping" endpoint. Its exact query parameters aren't confirmed yet (that lands with real order sync in Phase 8) — a 401/403/429/5xx from this call still tells you definitively whether your credentials/headers are being accepted.
 
 ## Product / stock / price sync
 
@@ -43,4 +65,6 @@ Credentials are never committed to the repository and never hardcoded. *(Wiring 
 
 ## Troubleshooting
 
-*(Filled in as real failure modes are handled, from Phase 4 onward.)*
+- **"TrendyolGo:SupplierId/ApiKey/ApiSecret/BaseUrl are not fully configured" at startup**: this only happens with `ASPNETCORE_ENVIRONMENT=Production`. Set all four via environment variables (or user-secrets in dev) before deploying.
+- **Test Connection always returns "Trendyol Go'ya bağlanılamadı"**: `TrendyolGo:BaseUrl` is likely wrong or unset — confirm the exact domain against developers.tgoapps.com.
+- **Test Connection returns 403 even with correct Key/Secret**: check `TrendyolGo:AgentName` / `TrendyolGo:ExecutorUser` against the docs — these are required header values Trendyol Go validates independently of the Basic Auth credentials.

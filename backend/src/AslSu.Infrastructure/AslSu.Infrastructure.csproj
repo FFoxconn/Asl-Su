@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AslSu.Domain\AslSu.Domain.csproj" />
     <ProjectReference Include="..\AslSu.Application\AslSu.Application.csproj" />
+    <ProjectReference Include="..\AslSu.TrendyolGo\AslSu.TrendyolGo.csproj" />
   </ItemGroup>
 
   <ItemGroup>

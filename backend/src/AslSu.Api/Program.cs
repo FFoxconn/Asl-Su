@@ -4,11 +4,14 @@ using AslSu.Application.Auth;
 using AslSu.Application.Catalog;
 using AslSu.Application.Products;
 using AslSu.Application.StockPrice;
+using AslSu.Application.TrendyolSettings;
 using AslSu.Infrastructure.Auth;
 using AslSu.Infrastructure.Catalog;
 using AslSu.Infrastructure.Persistence;
 using AslSu.Infrastructure.Products;
 using AslSu.Infrastructure.StockPrice;
+using AslSu.Infrastructure.TrendyolSettings;
+using AslSu.TrendyolGo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -53,6 +56,8 @@ builder.Services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IStockPriceService, StockPriceService>();
+builder.Services.AddScoped<ITrendyolSettingsService, TrendyolSettingsService>();
+builder.Services.AddTrendyolGoClient(builder.Configuration, builder.Environment);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
