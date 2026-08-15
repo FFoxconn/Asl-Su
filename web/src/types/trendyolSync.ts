@@ -23,3 +23,12 @@ export interface BatchPollSummary {
   failedCount: number;
   message: string | null;
 }
+
+export interface SaleStatusSyncSummary {
+  totalItems: number;
+  batchCount: number;
+  submittedCount: number;
+  failedCount: number;
+  batchRequestIds: string[];
+  message: string | null;
+}

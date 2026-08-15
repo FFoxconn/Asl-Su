@@ -92,6 +92,25 @@ dotnet user-secrets set "TrendyolGo:BatchResultEndpointPath" "..."   # from deve
 
 Until this is set, polling reports every pending batch as "still processing" rather than a hard failure (since a batch may genuinely still be processing on Trendyol's side — we just can't tell yet). Once set, the response's assumed `{status, successCount, failureCount, failureReasons}` shape may also need adjusting to match the real docs (see `TrendyolBatchResultClient`'s code comments) — it currently falls back to an "Unknown" status rather than crashing if the shape doesn't match.
 
+## Sell / unsell (satışa aç / satıştan kaldır)
+
+Each product's stock/price row (in the "Stok/Fiyat" editor on the Products page) shows its current sale status and a toggle button — **"Satıştan Kaldır"** (with a reason-code text field) or **"Satışa Aç"**. This only stages the change locally.
+
+The Products page's **"Satış Durumu Gönder"** button calls `POST /api/trendyol-sync/sale-status/push`, which:
+
+1. Finds only rows whose `IsOnSale` differs from the last-synced value — delta-only, same pattern as stock/price sync.
+2. Splits into batches and submits each to the sell/unsell endpoint.
+3. On success, advances `LastSyncedIsOnSale`/`SaleStatusLastSyncedAt`; on failure, leaves it so the row is retried next time.
+4. Records one row per batch in `BatchRequestLogs` (`OperationType = SellUnsell`).
+
+**Known gap, same shape as product creation and batch-result polling**: neither the sell/unsell endpoint path nor Trendyol Go's official set of unsell reason codes were given in the integration brief.
+
+```
+dotnet user-secrets set "TrendyolGo:SellUnsellEndpointPath" "..."   # from developers.tgoapps.com
+```
+
+Until this is set, every push attempt returns "Satışa açma/kapatma endpoint'i henüz yapılandırılmamış" and the batch is recorded as `Failed`. The reason-code field in both the API (`SetSaleStatusRequest.ReasonCode`) and the web UI is deliberately **free text**, not a closed dropdown — using a value the API doesn't recognize will surface as a 400-class failure through the normal error handling rather than crashing, but you should confirm the real supported codes against developers.tgoapps.com before relying on this for a real unsell.
+
 ## Order sync
 
 *(Not yet implemented — lands in Phases 8–10.)*

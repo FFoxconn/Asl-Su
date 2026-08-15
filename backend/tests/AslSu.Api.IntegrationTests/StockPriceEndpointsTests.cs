@@ -77,4 +77,48 @@ public class StockPriceEndpointsTests : IClassFixture<AslSuWebApplicationFactory
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task SetSaleStatus_ForNonExistentRow_ReturnsNotFound()
+    {
+        var client = await TestAuthHelper.CreateAuthenticatedClientAsync(_factory);
+
+        var response = await client.PutAsJsonAsync(
+            "/api/stock-price/sale-status", new SetSaleStatusRequest(999999, 999999, false, "OutOfStock"));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetSaleStatus_TogglesIsOnSaleAndReason()
+    {
+        var client = await TestAuthHelper.CreateAuthenticatedClientAsync(_factory);
+        var (productId, storeId) = await SeedProductAndStoreAsync(client, "F3");
+        await client.PutAsJsonAsync("/api/stock-price", new UpsertStockPriceRequest(productId, storeId, 10, 50m, 60m));
+
+        var disableResponse = await client.PutAsJsonAsync(
+            "/api/stock-price/sale-status", new SetSaleStatusRequest(productId, storeId, false, "OutOfStock"));
+
+        Assert.Equal(HttpStatusCode.OK, disableResponse.StatusCode);
+        var disabled = await disableResponse.Content.ReadFromJsonAsync<StockPriceDto>();
+        Assert.False(disabled!.IsOnSale);
+        Assert.Equal("OutOfStock", disabled.UnsaleReasonCode);
+
+        var enableResponse = await client.PutAsJsonAsync(
+            "/api/stock-price/sale-status", new SetSaleStatusRequest(productId, storeId, true, null));
+        var enabled = await enableResponse.Content.ReadFromJsonAsync<StockPriceDto>();
+        Assert.True(enabled!.IsOnSale);
+        Assert.Null(enabled.UnsaleReasonCode);
+    }
+
+    [Fact]
+    public async Task SetSaleStatus_WithoutToken_ReturnsUnauthorized()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            "/api/stock-price/sale-status", new SetSaleStatusRequest(1, 1, false, "OutOfStock"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

@@ -2,6 +2,7 @@ import { apiFetch } from './client';
 import type {
   CreateProductRequest,
   Product,
+  SetSaleStatusRequest,
   StockPrice,
   UpsertStockPriceRequest,
 } from '../types/product';
@@ -19,3 +20,6 @@ export const getStockPrice = (productId: number) =>
 
 export const upsertStockPrice = (request: UpsertStockPriceRequest) =>
   apiFetch<StockPrice>('/api/stock-price', { method: 'PUT', body: JSON.stringify(request) });
+
+export const setSaleStatus = (request: SetSaleStatusRequest) =>
+  apiFetch<StockPrice>('/api/stock-price/sale-status', { method: 'PUT', body: JSON.stringify(request) });

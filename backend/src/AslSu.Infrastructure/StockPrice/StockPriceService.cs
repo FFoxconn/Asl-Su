@@ -12,7 +12,8 @@ public class StockPriceService(AslSuDbContext dbContext) : IStockPriceService
         await dbContext.StoreProductInventories
             .Where(i => i.ProductId == productId)
             .Join(dbContext.Stores, i => i.StoreId, s => s.Id, (i, s) => new StockPriceDto(
-                i.ProductId, i.StoreId, s.Name, i.Quantity, i.SalePrice, i.ListPrice, i.LastSyncedAt))
+                i.ProductId, i.StoreId, s.Name, i.Quantity, i.SalePrice, i.ListPrice, i.LastSyncedAt,
+                i.IsOnSale, i.UnsaleReasonCode))
             .ToListAsync(cancellationToken);
 
     public async Task<StockPriceDto> UpsertAsync(UpsertStockPriceRequest request, CancellationToken cancellationToken = default)
@@ -41,8 +42,34 @@ public class StockPriceService(AslSuDbContext dbContext) : IStockPriceService
             .Select(s => s.Name)
             .SingleAsync(cancellationToken);
 
-        return new StockPriceDto(
-            inventory.ProductId, inventory.StoreId, storeName,
-            inventory.Quantity, inventory.SalePrice, inventory.ListPrice, inventory.LastSyncedAt);
+        return ToDto(inventory, storeName);
     }
+
+    public async Task<StockPriceDto?> SetSaleStatusAsync(SetSaleStatusRequest request, CancellationToken cancellationToken = default)
+    {
+        var inventory = await dbContext.StoreProductInventories
+            .SingleOrDefaultAsync(i => i.ProductId == request.ProductId && i.StoreId == request.StoreId, cancellationToken);
+
+        if (inventory is null)
+        {
+            return null;
+        }
+
+        inventory.IsOnSale = request.IsOnSale;
+        inventory.UnsaleReasonCode = request.IsOnSale ? null : request.ReasonCode;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var storeName = await dbContext.Stores
+            .Where(s => s.Id == request.StoreId)
+            .Select(s => s.Name)
+            .SingleAsync(cancellationToken);
+
+        return ToDto(inventory, storeName);
+    }
+
+    private static StockPriceDto ToDto(StoreProductInventory inventory, string storeName) => new(
+        inventory.ProductId, inventory.StoreId, storeName,
+        inventory.Quantity, inventory.SalePrice, inventory.ListPrice, inventory.LastSyncedAt,
+        inventory.IsOnSale, inventory.UnsaleReasonCode);
 }

@@ -40,6 +40,12 @@ public class TrendyolGoOptions
     /// unset rather than guessed, until confirmed against developers.tgoapps.com.</summary>
     public string BatchResultEndpointPath { get; set; } = string.Empty;
 
+    /// <summary>Path of the sell/unsell (sale status) endpoint. Never given in the
+    /// integration brief, same reasoning as ProductsEndpointPath: left unset rather than
+    /// guessed, until confirmed against developers.tgoapps.com. The set of valid unsell
+    /// reason codes is likewise unconfirmed — not enforced as a closed set in this codebase.</summary>
+    public string SellUnsellEndpointPath { get; set; } = string.Empty;
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(SupplierId) &&
         !string.IsNullOrWhiteSpace(ApiKey) &&

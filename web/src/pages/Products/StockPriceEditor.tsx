@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getStockPrice, upsertStockPrice } from '../../api/products';
+import { getStockPrice, setSaleStatus, upsertStockPrice } from '../../api/products';
 import type { Store } from '../../types/catalog';
 import type { StockPrice } from '../../types/product';
 
@@ -10,6 +10,8 @@ export function StockPriceEditor({ productId, stores }: { productId: number; sto
   const [salePrice, setSalePrice] = useState('0');
   const [listPrice, setListPrice] = useState('0');
   const [isSaving, setIsSaving] = useState(false);
+  const [reasonDrafts, setReasonDrafts] = useState<Record<number, string>>({});
+  const [togglingStoreId, setTogglingStoreId] = useState<number | null>(null);
 
   function refresh() {
     getStockPrice(productId).then(setRows);
@@ -34,6 +36,21 @@ export function StockPriceEditor({ productId, stores }: { productId: number; sto
     }
   }
 
+  async function handleToggleSaleStatus(row: StockPrice) {
+    setTogglingStoreId(row.storeId);
+    try {
+      await setSaleStatus({
+        productId,
+        storeId: row.storeId,
+        isOnSale: !row.isOnSale,
+        reasonCode: row.isOnSale ? (reasonDrafts[row.storeId] || null) : null,
+      });
+      refresh();
+    } finally {
+      setTogglingStoreId(null);
+    }
+  }
+
   return (
     <div style={{ padding: '8px 16px', background: '#fafafa', border: '1px solid #eee' }}>
       <table style={{ width: '100%', marginBottom: 8 }}>
@@ -43,6 +60,8 @@ export function StockPriceEditor({ productId, stores }: { productId: number; sto
             <th style={{ textAlign: 'right' }}>Stok</th>
             <th style={{ textAlign: 'right' }}>Satış Fiyatı</th>
             <th style={{ textAlign: 'right' }}>Liste Fiyatı</th>
+            <th style={{ textAlign: 'left' }}>Satış Durumu</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -52,11 +71,34 @@ export function StockPriceEditor({ productId, stores }: { productId: number; sto
               <td style={{ textAlign: 'right' }}>{row.quantity}</td>
               <td style={{ textAlign: 'right' }}>{row.salePrice.toFixed(2)}</td>
               <td style={{ textAlign: 'right' }}>{row.listPrice.toFixed(2)}</td>
+              <td>
+                {row.isOnSale ? (
+                  <span style={{ color: 'green' }}>Satışta</span>
+                ) : (
+                  <span style={{ color: 'crimson' }}>
+                    Satışta Değil{row.unsaleReasonCode ? ` (${row.unsaleReasonCode})` : ''}
+                  </span>
+                )}
+              </td>
+              <td style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                {row.isOnSale && (
+                  <input
+                    type="text"
+                    placeholder="Neden kodu"
+                    value={reasonDrafts[row.storeId] ?? ''}
+                    onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [row.storeId]: e.target.value }))}
+                    style={{ width: 90 }}
+                  />
+                )}
+                <button onClick={() => handleToggleSaleStatus(row)} disabled={togglingStoreId === row.storeId}>
+                  {togglingStoreId === row.storeId ? '...' : row.isOnSale ? 'Satıştan Kaldır' : 'Satışa Aç'}
+                </button>
+              </td>
             </tr>
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={4}>Bu ürün için henüz stok/fiyat girilmemiş.</td>
+              <td colSpan={6}>Bu ürün için henüz stok/fiyat girilmemiş.</td>
             </tr>
           )}
         </tbody>
@@ -96,6 +138,9 @@ export function StockPriceEditor({ productId, stores }: { productId: number; sto
           {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
         </button>
       </div>
+      <p style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+        Neden kodu Trendyol Go'nun resmi olarak desteklediği bir değer olmalı (developers.tgoapps.com).
+      </p>
     </div>
   );
 }

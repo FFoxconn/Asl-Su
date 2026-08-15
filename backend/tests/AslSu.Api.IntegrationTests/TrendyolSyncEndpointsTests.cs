@@ -4,6 +4,7 @@ using AslSu.Application.BatchPolling.Dtos;
 using AslSu.Application.Catalog.Dtos;
 using AslSu.Application.ProductSync.Dtos;
 using AslSu.Application.Products.Dtos;
+using AslSu.Application.SaleStatusSync.Dtos;
 using AslSu.Application.StockPrice.Dtos;
 using AslSu.Application.StockPriceSync.Dtos;
 using AslSu.Infrastructure.Persistence;
@@ -201,5 +202,83 @@ public class TrendyolSyncEndpointsTests : IClassFixture<AslSuWebApplicationFacto
         var summary = await response.Content.ReadFromJsonAsync<BatchPollSummary>();
         Assert.NotNull(summary);
         Assert.Equal(0, summary!.PolledCount);
+    }
+
+    [Fact]
+    public async Task PushSaleStatus_WithoutToken_ReturnsUnauthorized()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsync("/api/trendyol-sync/sale-status/push", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PushSaleStatus_WithChangedStatus_RecordsASellUnsellBatchLog()
+    {
+        var client = await TestAuthHelper.CreateAuthenticatedClientAsync(_factory);
+
+        var productResponse = await client.PostAsJsonAsync("/api/products", new CreateProductRequest(
+            Sku: "SKU-SALEPUSH-1", Barcode: "BARCODE-SALEPUSH-1", Name: "Sale Push Test Product",
+            Description: null, CategoryId: null, BrandId: null, VatRate: 18m, ImageUrl: null));
+        var product = await productResponse.Content.ReadFromJsonAsync<ProductDto>();
+
+        var storeResponse = await client.PostAsJsonAsync("/api/stores", new CreateStoreRequest(
+            Name: "Sale Push Store", Code: "SALEPUSH-STORE-1", Address: null));
+        var store = await storeResponse.Content.ReadFromJsonAsync<StoreDto>();
+
+        await client.PutAsJsonAsync("/api/stock-price", new UpsertStockPriceRequest(product!.Id, store!.Id, 15, 79.90m, 99.90m));
+        await client.PutAsJsonAsync(
+            "/api/stock-price/sale-status", new SetSaleStatusRequest(product.Id, store!.Id, false, "OutOfStock"));
+
+        var pushResponse = await client.PostAsync("/api/trendyol-sync/sale-status/push", null);
+        Assert.Equal(HttpStatusCode.OK, pushResponse.StatusCode);
+        var summary = await pushResponse.Content.ReadFromJsonAsync<SaleStatusSyncSummary>();
+        Assert.NotNull(summary);
+        Assert.True(summary!.TotalItems >= 1);
+
+        var logsResponse = await client.GetAsync("/api/trendyol-sync/batch-requests");
+        var logs = await logsResponse.Content.ReadFromJsonAsync<List<BatchRequestLogDto>>();
+        Assert.Contains(logs!, l => l.OperationType == "SellUnsell");
+    }
+
+    [Fact]
+    public async Task PushSaleStatus_SkipsRowsThatAreAlreadySyncedAndUnchanged()
+    {
+        var client = await TestAuthHelper.CreateAuthenticatedClientAsync(_factory);
+
+        var productResponse = await client.PostAsJsonAsync("/api/products", new CreateProductRequest(
+            Sku: "SKU-SALEDELTA-1", Barcode: "BARCODE-SALEDELTA-1", Name: "Sale Delta Test Product",
+            Description: null, CategoryId: null, BrandId: null, VatRate: 18m, ImageUrl: null));
+        var product = await productResponse.Content.ReadFromJsonAsync<ProductDto>();
+
+        var storeResponse = await client.PostAsJsonAsync("/api/stores", new CreateStoreRequest(
+            Name: "Sale Delta Store", Code: "SALEDELTA-STORE-1", Address: null));
+        var store = await storeResponse.Content.ReadFromJsonAsync<StoreDto>();
+
+        await client.PutAsJsonAsync("/api/stock-price", new UpsertStockPriceRequest(product!.Id, store!.Id, 10, 50m, 60m));
+
+        var syncedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AslSuDbContext>();
+            var inventory = await dbContext.StoreProductInventories
+                .SingleAsync(i => i.ProductId == product.Id && i.StoreId == store!.Id);
+            inventory.LastSyncedIsOnSale = inventory.IsOnSale;
+            inventory.SaleStatusLastSyncedAt = syncedAt;
+            await dbContext.SaveChangesAsync();
+        }
+
+        await client.PostAsync("/api/trendyol-sync/sale-status/push", null);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AslSuDbContext>();
+            var inventory = await dbContext.StoreProductInventories
+                .SingleAsync(i => i.ProductId == product.Id && i.StoreId == store!.Id);
+            // Untouched SaleStatusLastSyncedAt proves this row was excluded from the delta batch.
+            Assert.Equal(syncedAt, inventory.SaleStatusLastSyncedAt);
+        }
     }
 }

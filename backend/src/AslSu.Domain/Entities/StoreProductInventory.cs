@@ -15,4 +15,16 @@ public class StoreProductInventory
     public int? LastSyncedQuantity { get; set; }
     public decimal? LastSyncedSalePrice { get; set; }
     public DateTime? LastSyncedAt { get; set; }
+
+    /// <summary>Desired sale status for this product at this store — toggled locally, then
+    /// pushed to Trendyol Go by the sale-status sync.</summary>
+    public bool IsOnSale { get; set; } = true;
+
+    /// <summary>Only meaningful when IsOnSale is false. Must be one of Trendyol Go's supported
+    /// unsell reason codes — verify against developers.tgoapps.com; not enforced as a closed
+    /// set here since the real values weren't given in the integration brief.</summary>
+    public string? UnsaleReasonCode { get; set; }
+
+    public bool? LastSyncedIsOnSale { get; set; }
+    public DateTime? SaleStatusLastSyncedAt { get; set; }
 }

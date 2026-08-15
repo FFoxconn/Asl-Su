@@ -2,10 +2,15 @@ import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { createBrand, createCategory, createStore, getBrands, getCategories, getStores } from '../../api/catalog';
 import { createProduct, getProducts } from '../../api/products';
-import { pollBatchRequests, pushProducts, pushStockPrice } from '../../api/trendyolSync';
+import { pollBatchRequests, pushProducts, pushSaleStatus, pushStockPrice } from '../../api/trendyolSync';
 import type { Brand, Category, Store } from '../../types/catalog';
 import type { Product } from '../../types/product';
-import type { BatchPollSummary, ProductSyncSummary, StockPriceSyncSummary } from '../../types/trendyolSync';
+import type {
+  BatchPollSummary,
+  ProductSyncSummary,
+  SaleStatusSyncSummary,
+  StockPriceSyncSummary,
+} from '../../types/trendyolSync';
 import { StockPriceEditor } from './StockPriceEditor';
 
 export function ProductsPage() {
@@ -31,6 +36,8 @@ export function ProductsPage() {
   const [isPushingStockPrice, setIsPushingStockPrice] = useState(false);
   const [pollSummary, setPollSummary] = useState<BatchPollSummary | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [saleStatusSummary, setSaleStatusSummary] = useState<SaleStatusSyncSummary | null>(null);
+  const [isPushingSaleStatus, setIsPushingSaleStatus] = useState(false);
 
   function refreshAll() {
     getProducts().then(setProducts).catch((e) => setError(String(e.message ?? e)));
@@ -111,6 +118,18 @@ export function ProductsPage() {
       setError(e instanceof Error ? e.message : 'Stok/fiyat aktarımı başarısız oldu.');
     } finally {
       setIsPushingStockPrice(false);
+    }
+  }
+
+  async function handlePushSaleStatus() {
+    setIsPushingSaleStatus(true);
+    setSaleStatusSummary(null);
+    try {
+      setSaleStatusSummary(await pushSaleStatus());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Satış durumu aktarımı başarısız oldu.');
+    } finally {
+      setIsPushingSaleStatus(false);
     }
   }
 
@@ -202,6 +221,9 @@ export function ProductsPage() {
             <button onClick={handlePushStockPrice} disabled={isPushingStockPrice}>
               {isPushingStockPrice ? 'Gönderiliyor...' : 'Stok/Fiyat Gönder'}
             </button>
+            <button onClick={handlePushSaleStatus} disabled={isPushingSaleStatus}>
+              {isPushingSaleStatus ? 'Gönderiliyor...' : 'Satış Durumu Gönder'}
+            </button>
             <button onClick={handlePollBatchRequests} disabled={isPolling}>
               {isPolling ? 'Kontrol ediliyor...' : 'Parti Sonuçlarını Kontrol Et'}
             </button>
@@ -215,6 +237,11 @@ export function ProductsPage() {
         {stockPriceSummary && (
           <p style={{ color: stockPriceSummary.failedCount > 0 ? '#b45309' : 'green' }}>
             Stok/Fiyat: {stockPriceSummary.message}
+          </p>
+        )}
+        {saleStatusSummary && (
+          <p style={{ color: saleStatusSummary.failedCount > 0 ? '#b45309' : 'green' }}>
+            Satış Durumu: {saleStatusSummary.message}
           </p>
         )}
         {pollSummary && (

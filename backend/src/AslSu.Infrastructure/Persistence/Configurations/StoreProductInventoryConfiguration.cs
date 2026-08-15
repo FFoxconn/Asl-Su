@@ -16,6 +16,7 @@ public class StoreProductInventoryConfiguration : IEntityTypeConfiguration<Store
         builder.Property(i => i.SalePrice).HasColumnType("decimal(10,2)");
         builder.Property(i => i.ListPrice).HasColumnType("decimal(10,2)");
         builder.Property(i => i.LastSyncedSalePrice).HasColumnType("decimal(10,2)");
+        builder.Property(i => i.UnsaleReasonCode).HasMaxLength(100);
 
         builder.HasOne<Product>()
             .WithMany()

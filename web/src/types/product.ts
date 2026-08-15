@@ -31,6 +31,8 @@ export interface StockPrice {
   salePrice: number;
   listPrice: number;
   lastSyncedAt: string | null;
+  isOnSale: boolean;
+  unsaleReasonCode: string | null;
 }
 
 export interface UpsertStockPriceRequest {
@@ -39,4 +41,11 @@ export interface UpsertStockPriceRequest {
   quantity: number;
   salePrice: number;
   listPrice: number;
+}
+
+export interface SetSaleStatusRequest {
+  productId: number;
+  storeId: number;
+  isOnSale: boolean;
+  reasonCode: string | null;
 }

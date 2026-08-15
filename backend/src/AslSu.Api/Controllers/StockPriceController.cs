@@ -17,4 +17,11 @@ public class StockPriceController(IStockPriceService stockPriceService) : Contro
     [HttpPut]
     public async Task<IActionResult> Upsert(UpsertStockPriceRequest request, CancellationToken cancellationToken) =>
         Ok(await stockPriceService.UpsertAsync(request, cancellationToken));
+
+    [HttpPut("sale-status")]
+    public async Task<IActionResult> SetSaleStatus(SetSaleStatusRequest request, CancellationToken cancellationToken)
+    {
+        var result = await stockPriceService.SetSaleStatusAsync(request, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
+    }
 }

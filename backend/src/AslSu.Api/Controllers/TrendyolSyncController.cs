@@ -1,5 +1,6 @@
 using AslSu.Application.BatchPolling;
 using AslSu.Application.ProductSync;
+using AslSu.Application.SaleStatusSync;
 using AslSu.Application.StockPriceSync;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ namespace AslSu.Api.Controllers;
 public class TrendyolSyncController(
     IProductSyncService productSyncService,
     IStockPriceSyncService stockPriceSyncService,
+    ISaleStatusSyncService saleStatusSyncService,
     IBatchPollingService batchPollingService) : ControllerBase
 {
     [HttpPost("products/push")]
@@ -21,6 +23,10 @@ public class TrendyolSyncController(
     [HttpPost("stock-price/push")]
     public async Task<IActionResult> PushStockPrice(CancellationToken cancellationToken) =>
         Ok(await stockPriceSyncService.PushChangedInventoryAsync(cancellationToken));
+
+    [HttpPost("sale-status/push")]
+    public async Task<IActionResult> PushSaleStatus(CancellationToken cancellationToken) =>
+        Ok(await saleStatusSyncService.PushChangedSaleStatusAsync(cancellationToken));
 
     [HttpPost("batch-requests/poll")]
     public async Task<IActionResult> PollBatchRequests(CancellationToken cancellationToken) =>

@@ -7,7 +7,9 @@ public record StockPriceDto(
     int Quantity,
     decimal SalePrice,
     decimal ListPrice,
-    DateTime? LastSyncedAt);
+    DateTime? LastSyncedAt,
+    bool IsOnSale,
+    string? UnsaleReasonCode);
 
 public record UpsertStockPriceRequest(
     int ProductId,
@@ -15,3 +17,9 @@ public record UpsertStockPriceRequest(
     int Quantity,
     decimal SalePrice,
     decimal ListPrice);
+
+public record SetSaleStatusRequest(
+    int ProductId,
+    int StoreId,
+    bool IsOnSale,
+    string? ReasonCode);
