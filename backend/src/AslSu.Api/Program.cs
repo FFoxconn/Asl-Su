@@ -86,6 +86,7 @@ builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
 builder.Services.AddScoped<ICourierService, CourierService>();
 builder.Services.AddScoped<IWebhookService, WebhookService>();
 builder.Services.AddHostedService<OrderPollingBackgroundService>();
+builder.Services.AddHostedService<ProductAutoSyncBackgroundService>();
 builder.Services.AddTrendyolGoClient(builder.Configuration, builder.Environment);
 
 builder.Services

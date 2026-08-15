@@ -92,6 +92,10 @@ dotnet user-secrets set "TrendyolGo:BatchResultEndpointPath" "..."   # from deve
 
 Until this is set, polling reports every pending batch as "still processing" rather than a hard failure (since a batch may genuinely still be processing on Trendyol's side — we just can't tell yet). Once set, the response's assumed `{status, successCount, failureCount, failureReasons}` shape may also need adjusting to match the real docs (see `TrendyolBatchResultClient`'s code comments) — it currently falls back to an "Unknown" status rather than crashing if the shape doesn't match.
 
+## Background auto-sync
+
+You don't actually have to click "Trendyol Go'ya Aktar" / "Stok/Fiyat Gönder" / "Satış Durumu Gönder" / "Parti Sonuçlarını Kontrol Et" yourself — `ProductAutoSyncBackgroundService` runs all four automatically, in that order, roughly every minute, for as long as the app is running and Trendyol Go is configured. It only ever sends what's actually changed (the same delta logic behind each button), so a quiet minute where nothing changed costs a few DB queries and no Trendyol Go requests at all. The manual buttons still work the same as always — they're just no longer the only way these run. Like the order-pull poller (see "Polling fallback" below), a rate-limit response backs the next cycle off to every 3 minutes instead of 1.
+
 ## Sell / unsell (satışa aç / satıştan kaldır)
 
 Each product's stock/price row (in the "Stok/Fiyat" editor on the Products page) shows its current sale status and a toggle button — **"Satıştan Kaldır"** (with a reason-code text field) or **"Satışa Aç"**. This only stages the change locally.
