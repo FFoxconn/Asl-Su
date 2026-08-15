@@ -27,6 +27,13 @@ public class TrendyolGoOptions
     /// <summary>Value for the required x-executor-user header — verify against developers.tgoapps.com.</summary>
     public string ExecutorUser { get; set; } = string.Empty;
 
+    /// <summary>Path of the createProducts (bulk product creation) endpoint. Left unset by
+    /// design: the brief that shaped this integration gave the price-and-inventory and
+    /// packages-GET endpoints verbatim, but never the exact createProducts path or payload
+    /// shape. Rather than guess a plausible-looking URL, product push stays disabled — and
+    /// reports itself as such — until this is set from developers.tgoapps.com.</summary>
+    public string ProductsEndpointPath { get; set; } = string.Empty;
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(SupplierId) &&
         !string.IsNullOrWhiteSpace(ApiKey) &&

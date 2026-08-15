@@ -2,8 +2,10 @@ import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { createBrand, createCategory, createStore, getBrands, getCategories, getStores } from '../../api/catalog';
 import { createProduct, getProducts } from '../../api/products';
+import { pushProducts } from '../../api/trendyolSync';
 import type { Brand, Category, Store } from '../../types/catalog';
 import type { Product } from '../../types/product';
+import type { ProductSyncSummary } from '../../types/trendyolSync';
 import { StockPriceEditor } from './StockPriceEditor';
 
 export function ProductsPage() {
@@ -23,6 +25,8 @@ export function ProductsPage() {
   const [newStoreName, setNewStoreName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newBrandName, setNewBrandName] = useState('');
+  const [syncSummary, setSyncSummary] = useState<ProductSyncSummary | null>(null);
+  const [isPushing, setIsPushing] = useState(false);
 
   function refreshAll() {
     getProducts().then(setProducts).catch((e) => setError(String(e.message ?? e)));
@@ -78,6 +82,20 @@ export function ProductsPage() {
     await createBrand(newBrandName);
     setNewBrandName('');
     refreshAll();
+  }
+
+  async function handlePushProducts() {
+    setIsPushing(true);
+    setSyncSummary(null);
+    try {
+      const summary = await pushProducts();
+      setSyncSummary(summary);
+      refreshAll();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Trendyol Go\'ya aktarım başarısız oldu.');
+    } finally {
+      setIsPushing(false);
+    }
   }
 
   return (
@@ -147,7 +165,17 @@ export function ProductsPage() {
       </section>
 
       <section>
-        <h2>Ürün Listesi ({products.length})</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2>Ürün Listesi ({products.length})</h2>
+          <button onClick={handlePushProducts} disabled={isPushing}>
+            {isPushing ? 'Aktarılıyor...' : 'Trendyol Go\'ya Aktar'}
+          </button>
+        </div>
+        {syncSummary && (
+          <p style={{ color: syncSummary.failedCount > 0 ? '#b45309' : 'green' }}>
+            {syncSummary.message}
+          </p>
+        )}
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>

@@ -51,9 +51,27 @@ Every test-connection attempt is recorded in the `SyncLogs` table (operation, en
 
 The probe currently calls the packages (orders) GET endpoint given in the integration brief, since Trendyol Go doesn't have a dedicated "ping" endpoint. Its exact query parameters aren't confirmed yet (that lands with real order sync in Phase 8) — a 401/403/429/5xx from this call still tells you definitively whether your credentials/headers are being accepted.
 
-## Product / stock / price sync
+## Product sync (push)
 
-*(Not yet implemented — lands in Phases 5–7.)*
+The web admin panel's **Ürünler** screen (`/products`) has a **"Trendyol Go'ya Aktar"** button. It calls `POST /api/trendyol-sync/products/push`, which:
+
+1. Finds every product with `TgoSyncStatus` of `NotSynced` or `Failed`.
+2. Splits them into batches (`BatchSplitter`, max 1000 items — TODO: verify the real limit against developers.tgoapps.com).
+3. Submits each batch to Trendyol Go's product-creation endpoint.
+4. Updates each product's `TgoSyncStatus` (`Pending` on successful submission, `Failed` with a message otherwise) and `TgoLastSyncDate`.
+5. Records one row per batch in `BatchRequestLogs` (recent history via `GET /api/trendyol-sync/batch-requests`).
+
+**Known gap**: the brief that shaped this integration gave the price-and-inventory and packages-GET endpoints verbatim, but never the exact createProducts endpoint path or request/response schema. Rather than guess a URL, that endpoint is config-gated:
+
+```
+dotnet user-secrets set "TrendyolGo:ProductsEndpointPath" "..."   # from developers.tgoapps.com
+```
+
+Until this is set, every push attempt returns a clear "Ürün oluşturma endpoint'i henüz yapılandırılmamış" failure and products stay `Failed` — this is expected, not a bug. Once you have the real path (and, if it differs from what `TrendyolProductPayload` assumes, the real request schema) from the docs, set it and product push will start working; the request body shape may also need adjusting to match the docs at that point (see `TrendyolProductPayload`'s code comments).
+
+## Stock / price sync
+
+*(Not yet implemented — lands in Phases 6–7.)*
 
 ## Order sync
 

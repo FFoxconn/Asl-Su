@@ -5,6 +5,7 @@ using AslSu.TrendyolGo.Configuration;
 using AslSu.TrendyolGo.Connection;
 using AslSu.TrendyolGo.Http;
 using AslSu.TrendyolGo.Orders;
+using AslSu.TrendyolGo.Products;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,7 +36,19 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<TrendyolGoAuthHandler>();
 
-        services.AddHttpClient<ITrendyolOrderClient, TrendyolOrderClient>()
+        ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolOrderClient, TrendyolOrderClient>());
+        ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolProductClient, TrendyolProductClient>());
+
+        services.AddScoped<ITrendyolConnectionTester, TrendyolConnectionTester>();
+
+        return services;
+    }
+
+    /// <summary>Applies the settings every Trendyol Go typed HttpClient shares: BaseUrl,
+    /// TLS 1.2+, the auth-header handler, and 429/5xx retry-with-backoff.</summary>
+    private static void ConfigureTrendyolHttpClient(IHttpClientBuilder builder)
+    {
+        builder
             .ConfigureHttpClient((sp, client) =>
             {
                 var options = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
@@ -52,9 +65,9 @@ public static class ServiceCollectionExtensions
                 },
             })
             .AddHttpMessageHandler<TrendyolGoAuthHandler>()
-            .AddResilienceHandler("trendyol-go-retry", builder =>
+            .AddResilienceHandler("trendyol-go-retry", resilienceBuilder =>
             {
-                builder.AddRetry(new HttpRetryStrategyOptions
+                resilienceBuilder.AddRetry(new HttpRetryStrategyOptions
                 {
                     ShouldHandle = args => ValueTask.FromResult(
                         args.Outcome.Result is { } response &&
@@ -65,9 +78,5 @@ public static class ServiceCollectionExtensions
                     Delay = TimeSpan.FromSeconds(1),
                 });
             });
-
-        services.AddScoped<ITrendyolConnectionTester, TrendyolConnectionTester>();
-
-        return services;
     }
 }
