@@ -123,9 +123,32 @@ The web admin panel's **Siparişler** screen (`/orders`) has a **"Siparişleri �
 
 **Known gap, same shape as Phases 5–7**: the packages GET endpoint's exact response schema was never given in the integration brief — only its path was. Field names in `TrendyolPackageDto` (id/packageId, orderNumber, status, orderDate, customerFirstName/customerLastName, totalPrice, lines[].barcode, etc.) are a best-effort guess based on common marketplace API conventions, not confirmed against developers.tgoapps.com. Likewise, no store/warehouse field was confirmed in the payload — a package is matched to a `Store` via `Store.TgoStoreId` if the parsed value matches one, otherwise it falls back to the first store in the system. If you have more than one store, confirm the real field and adjust `TrendyolOrderClient`'s parsing before relying on this for multi-store order routing.
 
-`Order.WorkflowStatus` (the local Yeni → Kabul Edildi → Hazırlanıyor → Hazırlandı → Teslim Edildi fulfilment flow) is set to `New` only when an order is first inserted — pulling again never resets it. Advancing it through the workflow is Phase 9.
+`Order.WorkflowStatus` (the local Yeni → Kabul Edildi → Hazırlanıyor → Hazırlandı → Teslim Edildi fulfilment flow) is set to `New` only when an order is first inserted — pulling again never resets it. Advancing it through the workflow is described next.
 
-## Webhook
+## Order status workflow
+
+Each order in the **Siparişler** screen shows exactly one button — the single valid next step for its current `WorkflowStatus`:
+
+| Current step | Button | Calls | Next step |
+| --- | --- | --- | --- |
+| Yeni | Kabul Et | `POST /api/orders/{id}/accept` | Kabul Edildi |
+| Kabul Edildi | Hazırlanmaya Başla | `POST /api/orders/{id}/start-preparing` | Hazırlanıyor |
+| Hazırlanıyor | Hazırlandı Olarak İşaretle | `POST /api/orders/{id}/mark-prepared` | Hazırlandı |
+| Hazırlandı | Teslim Et | `POST /api/orders/{id}/deliver` | Teslim Edildi |
+
+Calling a step out of order (e.g. "Hazırlanmaya Başla" before "Kabul Et"), on a missing order, or twice in a row returns a 409/404 instead of silently succeeding — the workflow can only move forward one step at a time.
+
+Kabul Et / Hazırlandı Olarak İşaretle / Teslim Et also try to notify Trendyol Go (`accept`/`invoice`/`ship` respectively) through `ITrendyolPackageStatusClient`. **The local step always advances regardless of whether that notification succeeds** — this is deliberate: the panel's own fulfilment workflow shouldn't be blocked by Trendyol Go being unreachable or (right now) unconfigured. Each response includes `trendyolNotified` and `trendyolMessage` so you can see whether Trendyol Go was actually informed; the web UI surfaces this as an inline success/warning message under the row. "Hazırlanıyor" (Hazırlanmaya Başla) is a purely local milestone — no Trendyol Go call was given for it in the integration brief.
+
+**Known gap, same shape as product creation, batch-result polling, and sell/unsell**: none of the accept/invoice/ship endpoint paths were given in the integration brief.
+
+```
+dotnet user-secrets set "TrendyolGo:AcceptOrderEndpointPath" "..."   # from developers.tgoapps.com, with a {packageId} placeholder
+dotnet user-secrets set "TrendyolGo:InvoiceOrderEndpointPath" "..."  # same shape
+dotnet user-secrets set "TrendyolGo:ShipOrderEndpointPath" "..."     # same shape
+```
+
+Until these are set, `trendyolNotified` stays `false` and `trendyolMessage` explains why — but the order still moves through the local workflow normally.
 
 ## Webhook
 

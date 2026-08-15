@@ -7,6 +7,7 @@ using AslSu.TrendyolGo.Connection;
 using AslSu.TrendyolGo.Http;
 using AslSu.TrendyolGo.Inventory;
 using AslSu.TrendyolGo.Orders;
+using AslSu.TrendyolGo.PackageStatus;
 using AslSu.TrendyolGo.Products;
 using AslSu.TrendyolGo.SellUnsell;
 using Microsoft.Extensions.Configuration;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtensions
         ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolInventoryClient, TrendyolInventoryClient>());
         ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolBatchResultClient, TrendyolBatchResultClient>());
         ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolSellUnsellClient, TrendyolSellUnsellClient>());
+        ConfigureTrendyolHttpClient(services.AddHttpClient<ITrendyolPackageStatusClient, TrendyolPackageStatusClient>());
 
         services.AddScoped<ITrendyolConnectionTester, TrendyolConnectionTester>();
 

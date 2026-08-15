@@ -20,6 +20,13 @@ export interface OrderItem {
   substitutedForBarcode: string | null;
 }
 
+export interface OrderWorkflowActionResult {
+  success: boolean;
+  workflowStatus: string | null;
+  trendyolNotified: boolean;
+  trendyolMessage: string | null;
+}
+
 export interface OrderDetail {
   id: number;
   packageId: string;

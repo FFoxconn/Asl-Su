@@ -46,6 +46,20 @@ public class TrendyolGoOptions
     /// reason codes is likewise unconfirmed — not enforced as a closed set in this codebase.</summary>
     public string SellUnsellEndpointPath { get; set; } = string.Empty;
 
+    /// <summary>Path template of the "accept package" endpoint, with a
+    /// <c>{packageId}</c> placeholder. Never given in the integration brief, same reasoning
+    /// as ProductsEndpointPath: left unset rather than guessed, until confirmed against
+    /// developers.tgoapps.com.</summary>
+    public string AcceptOrderEndpointPath { get; set; } = string.Empty;
+
+    /// <summary>Path template of the "mark package invoiced" endpoint, with a
+    /// <c>{packageId}</c> placeholder. Same reasoning as AcceptOrderEndpointPath.</summary>
+    public string InvoiceOrderEndpointPath { get; set; } = string.Empty;
+
+    /// <summary>Path template of the "mark package shipped" endpoint, with a
+    /// <c>{packageId}</c> placeholder. Same reasoning as AcceptOrderEndpointPath.</summary>
+    public string ShipOrderEndpointPath { get; set; } = string.Empty;
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(SupplierId) &&
         !string.IsNullOrWhiteSpace(ApiKey) &&

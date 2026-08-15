@@ -4,6 +4,7 @@ using AslSu.Application.Auth;
 using AslSu.Application.BatchPolling;
 using AslSu.Application.Catalog;
 using AslSu.Application.OrderSync;
+using AslSu.Application.OrderWorkflow;
 using AslSu.Application.Orders;
 using AslSu.Application.ProductSync;
 using AslSu.Application.Products;
@@ -15,6 +16,7 @@ using AslSu.Infrastructure.Auth;
 using AslSu.Infrastructure.BatchPolling;
 using AslSu.Infrastructure.Catalog;
 using AslSu.Infrastructure.OrderSync;
+using AslSu.Infrastructure.OrderWorkflow;
 using AslSu.Infrastructure.Orders;
 using AslSu.Infrastructure.Persistence;
 using AslSu.Infrastructure.ProductSync;
@@ -75,6 +77,7 @@ builder.Services.AddScoped<ISaleStatusSyncService, SaleStatusSyncService>();
 builder.Services.AddScoped<IBatchPollingService, BatchPollingService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
+builder.Services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
 builder.Services.AddTrendyolGoClient(builder.Configuration, builder.Environment);
 
 builder.Services

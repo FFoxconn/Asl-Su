@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { getOrder, getOrders } from '../../api/orders';
+import { acceptOrder, deliverOrder, getOrder, getOrders, markOrderPrepared, startPreparingOrder } from '../../api/orders';
 import { pullOrders } from '../../api/trendyolSync';
-import type { OrderDetail, OrderListItem } from '../../types/order';
+import type { OrderDetail, OrderListItem, OrderWorkflowActionResult } from '../../types/order';
 import type { OrderSyncSummary } from '../../types/trendyolSync';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -24,6 +24,14 @@ import Typography from '@mui/material/Typography';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+
+const WORKFLOW_ACTIONS: Record<string, { label: string; call: (id: number) => Promise<OrderWorkflowActionResult> }> = {
+  New: { label: 'Kabul Et', call: acceptOrder },
+  Accepted: { label: 'Hazırlanmaya Başla', call: startPreparingOrder },
+  Preparing: { label: 'Hazırlandı Olarak İşaretle', call: markOrderPrepared },
+  Prepared: { label: 'Teslim Et', call: deliverOrder },
+};
 
 const TABS = [
   { key: 'all', label: 'Tüm Siparişler' },
@@ -61,6 +69,8 @@ export function OrdersPage() {
   const [pullSummary, setPullSummary] = useState<OrderSyncSummary | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [expandedDetail, setExpandedDetail] = useState<OrderDetail | null>(null);
+  const [actioningOrderId, setActioningOrderId] = useState<number | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ orderId: number; text: string; ok: boolean } | null>(null);
 
   function refresh() {
     getOrders().then(setOrders).catch((e) => setError(e instanceof Error ? e.message : 'Siparişler yüklenemedi.'));
@@ -100,6 +110,32 @@ export function OrdersPage() {
       setExpandedDetail(await getOrder(order.id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sipariş detayı yüklenemedi.');
+    }
+  }
+
+  async function handleWorkflowAction(order: OrderListItem) {
+    const action = WORKFLOW_ACTIONS[order.workflowStatus];
+    if (!action) return;
+
+    setActioningOrderId(order.id);
+    setActionMessage(null);
+    try {
+      const result = await action.call(order.id);
+      setActionMessage({
+        orderId: order.id,
+        ok: true,
+        text: result.trendyolNotified
+          ? 'Durum güncellendi ve Trendyol Go bilgilendirildi.'
+          : `Durum güncellendi (Trendyol Go bilgilendirilemedi: ${result.trendyolMessage ?? 'bilinmeyen hata'}).`,
+      });
+      refresh();
+      if (expandedOrderId === order.id) {
+        setExpandedDetail(await getOrder(order.id));
+      }
+    } catch (e) {
+      setActionMessage({ orderId: order.id, ok: false, text: e instanceof Error ? e.message : 'İşlem başarısız oldu.' });
+    } finally {
+      setActioningOrderId(null);
     }
   }
 
@@ -163,12 +199,15 @@ export function OrdersPage() {
                 <TableCell align="right">Tutar</TableCell>
                 <TableCell>Durum</TableCell>
                 <TableCell>İş Akışı</TableCell>
+                <TableCell>İşlem</TableCell>
                 <TableCell align="right" />
               </TableRow>
             </TableHead>
             <TableBody>
               {filtered.map((order) => {
                 const isExpanded = expandedOrderId === order.id;
+                const workflowAction = WORKFLOW_ACTIONS[order.workflowStatus];
+                const isActioning = actioningOrderId === order.id;
                 return (
                   <Fragment key={order.id}>
                     <TableRow hover>
@@ -188,14 +227,37 @@ export function OrdersPage() {
                           color={WORKFLOW_COLOR[order.workflowStatus] ?? 'default'}
                         />
                       </TableCell>
+                      <TableCell>
+                        {workflowAction ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleWorkflowAction(order)}
+                            disabled={isActioning}
+                          >
+                            {isActioning ? '...' : workflowAction.label}
+                          </Button>
+                        ) : order.workflowStatus === 'Delivered' ? (
+                          <Chip size="small" icon={<CheckCircleOutlineIcon />} label="Tamamlandı" color="success" variant="outlined" />
+                        ) : null}
+                      </TableCell>
                       <TableCell align="right">
                         <IconButton size="small" onClick={() => toggleExpand(order)} aria-label="Detay">
                           {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                         </IconButton>
                       </TableCell>
                     </TableRow>
+                    {actionMessage && actionMessage.orderId === order.id && (
+                      <TableRow>
+                        <TableCell colSpan={9} sx={{ py: 0.5, border: 'none' }}>
+                          <Alert severity={actionMessage.ok ? 'success' : 'error'} sx={{ py: 0 }}>
+                            {actionMessage.text}
+                          </Alert>
+                        </TableCell>
+                      </TableRow>
+                    )}
                     <TableRow>
-                      <TableCell colSpan={8} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
+                      <TableCell colSpan={9} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
                         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                           <Box sx={{ py: 2, bgcolor: 'action.hover', borderRadius: 1, px: 2, my: 1 }}>
                             {expandedDetail ? (
@@ -246,7 +308,7 @@ export function OrdersPage() {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8}>
+                  <TableCell colSpan={9}>
                     <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
                       Bu kategoride sipariş bulunmuyor.
                     </Typography>
