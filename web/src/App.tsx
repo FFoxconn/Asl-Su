@@ -12,6 +12,7 @@ import { ApiSettingsPage } from './pages/ApiSettings/ApiSettingsPage';
 import { OrdersPage } from './pages/Orders/OrdersPage';
 import { CouriersPage } from './pages/Couriers/CouriersPage';
 import { CourierDetailPage } from './pages/Couriers/CourierDetailPage';
+import { CourierMapPage } from './pages/CourierMap/CourierMapPage';
 
 function App() {
   return (
@@ -77,6 +78,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <CourierDetailPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courier-map"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CourierMapPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

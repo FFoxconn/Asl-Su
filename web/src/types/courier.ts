@@ -4,6 +4,9 @@ export interface Courier {
   phone: string | null;
   isActive: boolean;
   hasLogin: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  locationUpdatedAt: string | null;
 }
 
 export interface CourierOrderSummary {

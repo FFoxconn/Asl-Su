@@ -4,7 +4,9 @@ WORKDIR /src
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
+ARG VITE_GOOGLE_MAPS_API_KEY=""
 ENV VITE_API_BASE_URL=""
+ENV VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
