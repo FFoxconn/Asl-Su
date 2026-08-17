@@ -13,6 +13,7 @@ import { OrdersPage } from './pages/Orders/OrdersPage';
 import { CouriersPage } from './pages/Couriers/CouriersPage';
 import { CourierDetailPage } from './pages/Couriers/CourierDetailPage';
 import { CourierMapPage } from './pages/CourierMap/CourierMapPage';
+import { CourierLeaderboardPage } from './pages/CourierLeaderboard/CourierLeaderboardPage';
 
 function App() {
   return (
@@ -88,6 +89,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <CourierMapPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courier-leaderboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CourierLeaderboardPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

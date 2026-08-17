@@ -39,8 +39,10 @@ import Typography from '@mui/material/Typography';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
+import SaveAltOutlinedIcon from '@mui/icons-material/SaveAltOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
+import { downloadCsv } from '../../utils/csv';
 
 const WORKFLOW_ACTIONS: Record<string, { label: string; call: (id: number) => Promise<OrderWorkflowActionResult> }> = {
   New: { label: 'Kabul Et', call: acceptOrder },
@@ -108,6 +110,23 @@ export function OrdersPage() {
     if (tab === 'Cancelled') return orders.filter((o) => o.status === 'Cancelled');
     return orders.filter((o) => o.workflowStatus === tab);
   }, [orders, tab]);
+
+  function handleExportCsv() {
+    downloadCsv(
+      `siparisler-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Sipariş No', 'Paket ID', 'Müşteri', 'Tarih', 'Tutar', 'Durum', 'İş Akışı', 'Kurye'],
+      filtered.map((o) => [
+        o.orderNumber,
+        o.packageId,
+        o.customerName ?? '',
+        new Date(o.orderDate).toLocaleString('tr-TR'),
+        o.invoiceAmount != null ? o.invoiceAmount.toFixed(2) : '',
+        o.status,
+        o.workflowStatus,
+        o.courierName ?? '',
+      ]),
+    );
+  }
 
   async function handlePullOrders() {
     setIsPulling(true);
@@ -227,16 +246,26 @@ export function OrdersPage() {
               <Tab key={t.key} value={t.key} label={t.label} sx={{ minHeight: 40 }} />
             ))}
           </Tabs>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<DownloadOutlinedIcon />}
-            onClick={handlePullOrders}
-            disabled={isPulling}
-            sx={{ flexShrink: 0 }}
-          >
-            {isPulling ? 'Çekiliyor...' : 'Siparişleri Çek'}
-          </Button>
+          <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<SaveAltOutlinedIcon />}
+              onClick={handleExportCsv}
+              disabled={filtered.length === 0}
+            >
+              CSV İndir
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<DownloadOutlinedIcon />}
+              onClick={handlePullOrders}
+              disabled={isPulling}
+            >
+              {isPulling ? 'Çekiliyor...' : 'Siparişleri Çek'}
+            </Button>
+          </Stack>
         </Stack>
 
         {pullSummary && (

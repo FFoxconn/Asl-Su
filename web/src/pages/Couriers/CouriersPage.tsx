@@ -26,6 +26,8 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
+import SaveAltOutlinedIcon from '@mui/icons-material/SaveAltOutlined';
+import { downloadCsv } from '../../utils/csv';
 
 export function CouriersPage() {
   const navigate = useNavigate();
@@ -68,6 +70,21 @@ export function CouriersPage() {
     }
   }
 
+  function handleExportCsv() {
+    downloadCsv(
+      `kuryeler-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Ad Soyad', 'Telefon', 'Durum', 'Giriş', 'Toplam Sipariş', 'Toplam Ciro'],
+      couriers.map((c) => [
+        c.name,
+        c.phone ?? '',
+        c.isActive ? 'Aktif' : 'Pasif',
+        c.hasLogin ? 'Var' : 'Yok',
+        c.totalOrders,
+        c.totalRevenue.toFixed(2),
+      ]),
+    );
+  }
+
   async function handleToggleActive(courier: Courier) {
     setTogglingId(courier.id);
     setError(null);
@@ -83,9 +100,18 @@ export function CouriersPage() {
 
   return (
     <Box>
-      <Typography variant="h1" gutterBottom>
-        Kuryeler
-      </Typography>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <Typography variant="h1">Kuryeler</Typography>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<SaveAltOutlinedIcon />}
+          onClick={handleExportCsv}
+          disabled={couriers.length === 0}
+        >
+          CSV İndir
+        </Button>
+      </Stack>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
