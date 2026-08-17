@@ -21,22 +21,17 @@ namespace AslSu.TrendyolGo;
 
 public static class ServiceCollectionExtensions
 {
-    /// <summary>Registers TrendyolGoOptions (validated: required in Production, optional
-    /// elsewhere — Development, Testing, etc. — so the app and test hosts still run before
-    /// credentials are configured), the auth-header delegating handler, a typed HttpClient
-    /// enforcing TLS 1.2+, and 429/5xx retry-with-backoff — plus the Trendyol Go client
-    /// interfaces.</summary>
+    /// <summary>Registers TrendyolGoOptions (never required — the app and every Trendyol
+    /// client already check TrendyolGoOptions.IsConfigured at call time and report "not
+    /// configured" instead of crashing, so there's no need to hard-fail startup in any
+    /// environment, Production included), the auth-header delegating handler, a typed
+    /// HttpClient enforcing TLS 1.2+, and 429/5xx retry-with-backoff — plus the Trendyol Go
+    /// client interfaces.</summary>
     public static IServiceCollection AddTrendyolGoClient(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddOptions<TrendyolGoOptions>()
-            .Bind(configuration.GetSection(TrendyolGoOptions.SectionName))
-            .Validate(
-                o => !environment.IsProduction() || o.IsConfigured,
-                "TrendyolGo:SupplierId/ApiKey/ApiSecret/BaseUrl are not fully configured. Set them via " +
-                "'dotnet user-secrets set \"TrendyolGo:<Key>\" \"<value>\"' in development, or " +
-                "TrendyolGo__<Key> environment variables in other environments.")
-            .ValidateOnStart();
+            .Bind(configuration.GetSection(TrendyolGoOptions.SectionName));
 
         services.AddTransient<TrendyolGoAuthHandler>();
 
