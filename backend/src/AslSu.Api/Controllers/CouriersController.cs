@@ -17,4 +17,11 @@ public class CouriersController(ICourierService courierService) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateCourierRequest request, CancellationToken cancellationToken) =>
         Ok(await courierService.CreateAsync(request, cancellationToken));
+
+    [HttpGet("{id:int}/stats")]
+    public async Task<IActionResult> GetStats(int id, CancellationToken cancellationToken)
+    {
+        var stats = await courierService.GetStatsAsync(id, cancellationToken);
+        return stats is null ? NotFound() : Ok(stats);
+    }
 }

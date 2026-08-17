@@ -11,6 +11,7 @@ import { ProductsPage } from './pages/Products/ProductsPage';
 import { ApiSettingsPage } from './pages/ApiSettings/ApiSettingsPage';
 import { OrdersPage } from './pages/Orders/OrdersPage';
 import { CouriersPage } from './pages/Couriers/CouriersPage';
+import { CourierDetailPage } from './pages/Couriers/CourierDetailPage';
 
 function App() {
   return (
@@ -66,6 +67,16 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <CouriersPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/couriers/:id"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CourierDetailPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

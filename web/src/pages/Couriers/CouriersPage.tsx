@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createCourier, getCouriers } from '../../api/couriers';
 import type { Courier } from '../../types/courier';
 import Alert from '@mui/material/Alert';
@@ -16,6 +17,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 export function CouriersPage() {
+  const navigate = useNavigate();
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -78,7 +80,12 @@ export function CouriersPage() {
             </TableHead>
             <TableBody>
               {couriers.map((courier) => (
-                <TableRow key={courier.id} hover>
+                <TableRow
+                  key={courier.id}
+                  hover
+                  onClick={() => navigate(`/couriers/${courier.id}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
                   <TableCell>{courier.name}</TableCell>
                   <TableCell>{courier.phone ?? '-'}</TableCell>
                   <TableCell>
