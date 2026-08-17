@@ -38,7 +38,8 @@ public class OrderService(AslSuDbContext dbContext) : IOrderService
             o.InvoiceAmount,
             o.CustomerId.HasValue && customers.TryGetValue(o.CustomerId.Value, out var c) ? c.Name : null,
             o.CourierId,
-            o.CourierId.HasValue && couriers.TryGetValue(o.CourierId.Value, out var cr) ? cr.Name : null)).ToList();
+            o.CourierId.HasValue && couriers.TryGetValue(o.CourierId.Value, out var cr) ? cr.Name : null,
+            o.UpdatedAt)).ToList();
     }
 
     public async Task<OrderDetailDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

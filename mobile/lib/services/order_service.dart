@@ -1,4 +1,5 @@
 import '../models/order.dart';
+import '../models/order_detail.dart';
 import 'api_client.dart';
 
 class OrderService {
@@ -8,6 +9,11 @@ class OrderService {
   Future<List<OrderListItem>> getMyOrders() async {
     final json = await _client.get('/api/orders/my') as List<dynamic>;
     return json.map((e) => OrderListItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<OrderDetail> getOrder(int orderId) async {
+    final json = await _client.get('/api/orders/$orderId');
+    return OrderDetail.fromJson(json as Map<String, dynamic>);
   }
 
   Future<DeliverResult> deliverOrder(int orderId) async {

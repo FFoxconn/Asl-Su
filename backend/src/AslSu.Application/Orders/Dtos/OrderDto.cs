@@ -20,7 +20,8 @@ public record OrderListItemDto(
     decimal? InvoiceAmount,
     string? CustomerName,
     int? CourierId,
-    string? CourierName);
+    string? CourierName,
+    DateTime UpdatedAt);
 
 public record OrderDetailDto(
     int Id,

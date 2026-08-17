@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../services/order_service.dart';
 import '../theme.dart';
+import 'order_detail_screen.dart';
 
 const _workflowLabel = {
   'New': 'Yeni',
@@ -214,54 +215,69 @@ class _OrderList extends StatelessWidget {
                 final isDelivering = deliveringId == order.id;
                 final isReturned = order.status == 'Returned';
                 return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(order.orderNumber, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                            if (isReturned)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                                decoration: BoxDecoration(color: dangerBg, borderRadius: BorderRadius.circular(999)),
-                                child: const Text('İade', style: TextStyle(color: dangerColor, fontSize: 11.5, fontWeight: FontWeight.w600)),
-                              )
-                            else
-                              Text(
-                                _workflowLabel[order.workflowStatus] ?? order.workflowStatus,
-                                style: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 12.5),
-                              ),
-                          ],
-                        ),
-                        if (order.customerName != null) ...[
-                          const SizedBox(height: 4),
-                          Text(order.customerName!, style: const TextStyle(color: mutedColor)),
-                        ],
-                        const SizedBox(height: 4),
-                        Text(
-                          order.invoiceAmount != null ? '${order.invoiceAmount!.toStringAsFixed(2)} ₺' : '-',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        if (canDeliver && !isReturned) ...[
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: isDelivering ? null : () => onDeliver(order.id),
-                              child: isDelivering
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
-                                    )
-                                  : const Text('Teslim Et'),
-                            ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: order.id))),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(order.orderNumber, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                              if (isReturned)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                  decoration: BoxDecoration(color: dangerBg, borderRadius: BorderRadius.circular(999)),
+                                  child: const Text('İade', style: TextStyle(color: dangerColor, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                                )
+                              else
+                                Text(
+                                  _workflowLabel[order.workflowStatus] ?? order.workflowStatus,
+                                  style: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 12.5),
+                                ),
+                            ],
                           ),
+                          if (order.customerName != null) ...[
+                            const SizedBox(height: 4),
+                            Text(order.customerName!, style: const TextStyle(color: mutedColor)),
+                          ],
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                order.invoiceAmount != null ? '${order.invoiceAmount!.toStringAsFixed(2)} ₺' : '-',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              const Row(
+                                children: [
+                                  Text('Siparişi Gör', style: TextStyle(color: primaryColor, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                                  Icon(Icons.chevron_right, color: primaryColor, size: 18),
+                                ],
+                              ),
+                            ],
+                          ),
+                          if (canDeliver && !isReturned) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isDelivering ? null : () => onDeliver(order.id),
+                                child: isDelivering
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                                      )
+                                    : const Text('Teslim Et'),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 );
