@@ -71,6 +71,8 @@ class _MyDeliveriesScreenState extends State<MyDeliveriesScreen> {
     final session = context.watch<AuthProvider>().session;
     final deliveries = _orders.where((o) => o.status != 'Returned').toList();
     final returns = _orders.where((o) => o.status == 'Returned').toList();
+    final deliveredCount = _orders.where((o) => o.workflowStatus == 'Delivered').length;
+    final totalRevenue = _orders.fold<double>(0, (sum, o) => sum + (o.invoiceAmount ?? 0));
 
     return DefaultTabController(
       length: 2,
@@ -96,6 +98,47 @@ class _MyDeliveriesScreenState extends State<MyDeliveriesScreen> {
                 child: Text('Hoş geldin, ${session?.displayName ?? ''}', style: const TextStyle(color: mutedColor)),
               ),
             ),
+            if (!_isLoading)
+              SizedBox(
+                height: 92,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  children: [
+                    _StatCard(
+                      icon: Icons.inventory_2_outlined,
+                      label: 'Toplam Sipariş',
+                      value: '${_orders.length}',
+                      color: primaryColor,
+                      bg: infoBg,
+                    ),
+                    const SizedBox(width: 10),
+                    _StatCard(
+                      icon: Icons.check_circle_outline,
+                      label: 'Teslim Edilen',
+                      value: '$deliveredCount',
+                      color: successColor,
+                      bg: successBg,
+                    ),
+                    const SizedBox(width: 10),
+                    _StatCard(
+                      icon: Icons.assignment_return_outlined,
+                      label: 'İade',
+                      value: '${returns.length}',
+                      color: dangerColor,
+                      bg: dangerBg,
+                    ),
+                    const SizedBox(width: 10),
+                    _StatCard(
+                      icon: Icons.payments_outlined,
+                      label: 'Toplam Ciro',
+                      value: '${totalRevenue.toStringAsFixed(0)} ₺',
+                      color: primaryColor,
+                      bg: infoBg,
+                    ),
+                  ],
+                ),
+              ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -224,6 +267,49 @@ class _OrderList extends StatelessWidget {
                 );
               },
             ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final Color bg;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.bg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 132,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: color, size: 17),
+          ),
+          const Spacer(),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(label, style: const TextStyle(color: mutedColor, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
     );
   }
 }
