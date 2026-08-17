@@ -52,6 +52,15 @@ export function CourierMapPage() {
           zoom: 6,
           mapId: 'ASLSU_COURIER_MAP',
         });
+        // Map can measure a stale 0-size container on first paint (it's
+        // nested under a Paper/overlay whose layout may not have settled
+        // yet); forcing a resize on the next frame makes it re-measure and
+        // start loading tiles instead of staying blank forever.
+        requestAnimationFrame(() => {
+          if (cancelled || !mapRef.current) return;
+          google.maps.event.trigger(mapRef.current, 'resize');
+          mapRef.current.setCenter(TURKEY_CENTER);
+        });
       })
       .catch(() => {
         if (!cancelled) setMapsError('Google Maps yüklenemedi. API anahtarını kontrol edin.');
