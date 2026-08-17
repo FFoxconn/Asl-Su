@@ -1,7 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -18,6 +26,22 @@ import { getCouriers } from '../../api/couriers';
 import { ApiError } from '../../api/client';
 import type { OrderListItem } from '../../types/order';
 import type { Courier } from '../../types/courier';
+
+const WORKFLOW_STEPS: { key: string; label: string; color: string }[] = [
+  { key: 'New', label: 'Yeni', color: '#8a94a6' },
+  { key: 'Accepted', label: 'Kabul Edildi', color: '#0b6e99' },
+  { key: 'Preparing', label: 'Hazırlanıyor', color: '#b5730c' },
+  { key: 'Prepared', label: 'Hazırlandı', color: '#7c4dff' },
+  { key: 'Delivered', label: 'Teslim Edildi', color: '#1f9254' },
+];
+
+const WORKFLOW_CHIP_COLOR: Record<string, 'default' | 'info' | 'warning' | 'secondary' | 'success'> = {
+  New: 'default',
+  Accepted: 'info',
+  Preparing: 'warning',
+  Prepared: 'secondary',
+  Delivered: 'success',
+};
 
 const QUICK_LINKS = [
   { to: '/products', label: 'Ürünler', description: 'Ürün, stok ve fiyat yönetimi', icon: <Inventory2OutlinedIcon /> },
@@ -104,6 +128,16 @@ export function DashboardPage() {
   const todayOrders = orders?.filter((o) => isToday(o.orderDate)) ?? [];
   const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.invoiceAmount ?? 0), 0);
   const activeCourierCount = couriers?.filter((c) => c.isActive).length ?? 0;
+
+  const recentOrders = orders != null
+    ? [...orders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()).slice(0, 8)
+    : [];
+
+  const statusCounts = (orders ?? []).reduce<Record<string, number>>((acc, o) => {
+    acc[o.workflowStatus] = (acc[o.workflowStatus] ?? 0) + 1;
+    return acc;
+  }, {});
+  const totalForBreakdown = orders?.length ?? 0;
 
   return (
     <Box>
@@ -197,6 +231,116 @@ export function DashboardPage() {
             </Stack>
           )}
           {!health && !healthError && <Typography sx={{ fontWeight: 600 }}>Kontrol ediliyor...</Typography>}
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+          gap: 2,
+          mb: 4,
+          alignItems: 'start',
+        }}
+      >
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 3,
+            overflow: 'hidden',
+          }}
+        >
+          <Typography variant="h2" sx={{ p: 2, pb: 1.5 }}>
+            Son Siparişler
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Sipariş No</TableCell>
+                  <TableCell>Müşteri</TableCell>
+                  <TableCell>Durum</TableCell>
+                  <TableCell>Kurye</TableCell>
+                  <TableCell align="right">Tutar</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {recentOrders.map((o) => (
+                  <TableRow key={o.id} hover>
+                    <TableCell>{o.orderNumber}</TableCell>
+                    <TableCell>{o.customerName ?? '-'}</TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={WORKFLOW_STEPS.find((s) => s.key === o.workflowStatus)?.label ?? o.workflowStatus}
+                        color={WORKFLOW_CHIP_COLOR[o.workflowStatus] ?? 'default'}
+                      />
+                    </TableCell>
+                    <TableCell>{o.courierName ?? '-'}</TableCell>
+                    <TableCell align="right">
+                      {o.invoiceAmount != null ? `${o.invoiceAmount.toFixed(2)} ₺` : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {orders != null && recentOrders.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                        Henüz sipariş yok.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 3,
+            p: 2.5,
+          }}
+        >
+          <Typography variant="h2" sx={{ mb: 2 }}>
+            Sipariş Durumu Dağılımı
+          </Typography>
+          <Stack spacing={2}>
+            {WORKFLOW_STEPS.map((step) => {
+              const count = statusCounts[step.key] ?? 0;
+              const pct = totalForBreakdown > 0 ? (count / totalForBreakdown) * 100 : 0;
+              return (
+                <Box key={step.key}>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                    <Typography variant="body2">{step.label}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      {count}
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={pct}
+                    sx={{
+                      height: 6,
+                      borderRadius: 3,
+                      bgcolor: 'action.hover',
+                      '& .MuiLinearProgress-bar': { bgcolor: step.color, borderRadius: 3 },
+                    }}
+                  />
+                </Box>
+              );
+            })}
+            {totalForBreakdown === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Henüz sipariş yok.
+              </Typography>
+            )}
+          </Stack>
         </Box>
       </Box>
 
