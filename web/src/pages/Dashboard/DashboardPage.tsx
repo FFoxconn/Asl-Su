@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -10,9 +10,14 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import { useAuth } from '../../auth/AuthContext';
 import { getHealth, type HealthStatus } from '../../api/auth';
+import { getOrders } from '../../api/orders';
+import { getCouriers } from '../../api/couriers';
 import { ApiError } from '../../api/client';
+import type { OrderListItem } from '../../types/order';
+import type { Courier } from '../../types/courier';
 
 const QUICK_LINKS = [
   { to: '/products', label: 'Ürünler', description: 'Ürün, stok ve fiyat yönetimi', icon: <Inventory2OutlinedIcon /> },
@@ -21,16 +26,84 @@ const QUICK_LINKS = [
   { to: '/api-settings', label: 'API Ayarları', description: 'Bağlantı durumu ve test', icon: <SettingsOutlinedIcon /> },
 ];
 
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
+function KpiCard({
+  icon,
+  label,
+  value,
+  bg,
+  color,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  bg: string;
+  color: string;
+}) {
+  return (
+    <Box
+      sx={{
+        flex: '1 1 160px',
+        display: 'flex',
+        gap: 1.5,
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 3,
+        p: 2,
+      }}
+    >
+      <Box
+        sx={{
+          width: 40,
+          height: 40,
+          borderRadius: 2,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: bg,
+          color,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="body2" color="text.secondary" noWrap sx={{ fontSize: '0.78rem' }}>
+          {label}
+        </Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: '1.3rem' }} noWrap>
+          {value}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
 export function DashboardPage() {
   const { session } = useAuth();
   const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<OrderListItem[] | null>(null);
+  const [couriers, setCouriers] = useState<Courier[] | null>(null);
 
   useEffect(() => {
     getHealth()
       .then(setHealth)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Backend'e ulaşılamadı."));
+      .catch((err) => setHealthError(err instanceof ApiError ? err.message : "Backend'e ulaşılamadı."));
+    getOrders().then(setOrders).catch(() => setOrders([]));
+    getCouriers().then(setCouriers).catch(() => setCouriers([]));
   }, []);
+
+  const todayOrders = orders?.filter((o) => isToday(o.orderDate)) ?? [];
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.invoiceAmount ?? 0), 0);
+  const activeCourierCount = couriers?.filter((c) => c.isActive).length ?? 0;
 
   return (
     <Box>
@@ -46,6 +119,37 @@ export function DashboardPage() {
           · {session?.role}
         </Typography>
       </Box>
+
+      <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mb: 4 }}>
+        <KpiCard
+          icon={<ReceiptLongOutlinedIcon />}
+          label="Toplam Sipariş"
+          value={orders != null ? `${orders.length}` : '-'}
+          bg="#e5f0fd"
+          color="#0b6e99"
+        />
+        <KpiCard
+          icon={<Inventory2OutlinedIcon />}
+          label="Bugünkü Sipariş"
+          value={orders != null ? `${todayOrders.length}` : '-'}
+          bg="#e5f0fd"
+          color="#0b6e99"
+        />
+        <KpiCard
+          icon={<PaymentsOutlinedIcon />}
+          label="Bugünkü Ciro"
+          value={orders != null ? `${todayRevenue.toFixed(2)} ₺` : '-'}
+          bg="#dcf3e4"
+          color="#1f9254"
+        />
+        <KpiCard
+          icon={<LocalShippingOutlinedIcon />}
+          label="Aktif Kurye"
+          value={couriers != null ? `${activeCourierCount}` : '-'}
+          bg="#fdecc8"
+          color="#b5730c"
+        />
+      </Stack>
 
       <Box
         sx={{
@@ -69,18 +173,18 @@ export function DashboardPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: error ? '#fbe7e7' : health ? '#dcf3e4' : 'action.hover',
-            color: error ? 'error.main' : health ? 'success.main' : 'text.secondary',
+            bgcolor: healthError ? '#fbe7e7' : health ? '#dcf3e4' : 'action.hover',
+            color: healthError ? 'error.main' : health ? 'success.main' : 'text.secondary',
           }}
         >
-          {error ? <ErrorOutlineIcon /> : health ? <CheckCircleOutlineIcon /> : <HourglassEmptyIcon />}
+          {healthError ? <ErrorOutlineIcon /> : health ? <CheckCircleOutlineIcon /> : <HourglassEmptyIcon />}
         </Box>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="body2" color="text.secondary">
             Backend Durumu
           </Typography>
-          {error && (
-            <Typography sx={{ color: 'error.main', fontWeight: 600, fontSize: '0.95rem' }}>{error}</Typography>
+          {healthError && (
+            <Typography sx={{ color: 'error.main', fontWeight: 600, fontSize: '0.95rem' }}>{healthError}</Typography>
           )}
           {health && (
             <Stack direction="row" spacing={1} alignItems="baseline">
@@ -92,7 +196,7 @@ export function DashboardPage() {
               </Typography>
             </Stack>
           )}
-          {!health && !error && <Typography sx={{ fontWeight: 600 }}>Kontrol ediliyor...</Typography>}
+          {!health && !healthError && <Typography sx={{ fontWeight: 600 }}>Kontrol ediliyor...</Typography>}
         </Box>
       </Box>
 

@@ -8,13 +8,21 @@ public record CourierDto(
     bool HasLogin,
     double? Latitude,
     double? Longitude,
-    DateTime? LocationUpdatedAt);
+    DateTime? LocationUpdatedAt,
+    int TotalOrders,
+    decimal TotalRevenue);
 
 /// <summary>Email/Password are optional — set both together to also create a Courier-role
 /// login account for this courier (skip both to keep it a login-less reference row).</summary>
 public record CreateCourierRequest(string Name, string? Phone, string? Email = null, string? Password = null);
 
 public record UpdateCourierLocationRequest(double Latitude, double Longitude);
+
+public record SetCourierActiveRequest(bool IsActive);
+
+/// <summary>Grants a courier login access if it doesn't have one yet (creates a linked
+/// Courier-role User), or resets the password on the existing one.</summary>
+public record SetCourierLoginRequest(string Email, string Password);
 
 public record CourierStatsDto(
     int CourierId,

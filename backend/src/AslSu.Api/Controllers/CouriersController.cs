@@ -38,4 +38,22 @@ public class CouriersController(ICourierService courierService) : ControllerBase
         var updated = await courierService.UpdateLocationAsync(userId, request.Latitude, request.Longitude, cancellationToken);
         return updated ? NoContent() : Forbid();
     }
+
+    [HttpPut("{id:int}/status")]
+    [Authorize(Roles = "Admin,Operator")]
+    public async Task<IActionResult> SetActive(int id, SetCourierActiveRequest request, CancellationToken cancellationToken)
+    {
+        var courier = await courierService.SetActiveAsync(id, request.IsActive, cancellationToken);
+        return courier is null ? NotFound() : Ok(courier);
+    }
+
+    /// <summary>Grants login access to a courier that doesn't have it yet, or resets the
+    /// password on the one it already has.</summary>
+    [HttpPut("{id:int}/login")]
+    [Authorize(Roles = "Admin,Operator")]
+    public async Task<IActionResult> SetLogin(int id, SetCourierLoginRequest request, CancellationToken cancellationToken)
+    {
+        var courier = await courierService.SetLoginAsync(id, request.Email, request.Password, cancellationToken);
+        return courier is null ? NotFound() : Ok(courier);
+    }
 }

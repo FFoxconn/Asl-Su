@@ -7,6 +7,8 @@ export interface Courier {
   latitude: number | null;
   longitude: number | null;
   locationUpdatedAt: string | null;
+  totalOrders: number;
+  totalRevenue: number;
 }
 
 export interface CourierOrderSummary {
