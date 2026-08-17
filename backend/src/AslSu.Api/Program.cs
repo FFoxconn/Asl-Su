@@ -161,7 +161,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
+// "Testing" (integration tests) provisions its own SQLite schema via EnsureCreated,
+// since SQLite can't run migrations generated for SQL Server — skip this there.
+if (!app.Environment.IsEnvironment("Testing"))
+{
     using var scope = app.Services.CreateScope();
     var provider = scope.ServiceProvider;
     await DbInitializer.MigrateAndSeedAsync(
