@@ -89,6 +89,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  Future<void> _openWhatsApp(String phone) async {
+    var digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0')) {
+      digits = '9$digits';
+    } else if (!digits.startsWith('90')) {
+      digits = '90$digits';
+    }
+    final uri = Uri.parse('https://wa.me/$digits');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,13 +155,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ],
                 if (order.customerPhone != null) ...[
                   const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _call(order.customerPhone!),
-                      icon: const Icon(Icons.call_outlined),
-                      label: Text('Ara: ${order.customerPhone}'),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _call(order.customerPhone!),
+                          icon: const Icon(Icons.call_outlined),
+                          label: const Text('Ara'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openWhatsApp(order.customerPhone!),
+                          icon: const Icon(Icons.chat_outlined, color: successColor),
+                          label: const Text('WhatsApp', style: TextStyle(color: successColor)),
+                          style: OutlinedButton.styleFrom(side: const BorderSide(color: successColor)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],

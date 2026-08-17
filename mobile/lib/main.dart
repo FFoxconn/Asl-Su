@@ -5,10 +5,13 @@ import 'providers/auth_provider.dart';
 import 'screens/root_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
+import 'services/location_service.dart';
 import 'services/session_storage.dart';
 import 'theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeLocationService();
   runApp(const AslSuApp());
 }
 

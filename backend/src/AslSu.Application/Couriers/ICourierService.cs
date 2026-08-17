@@ -10,4 +10,8 @@ public interface ICourierService
 
     /// <summary>Resolves the Courier row linked to a logged-in Courier-role User, if any.</summary>
     Task<CourierDto?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Records the current courier's GPS position. Returns false if no Courier row is
+    /// linked to this user.</summary>
+    Task<bool> UpdateLocationAsync(int userId, double latitude, double longitude, CancellationToken cancellationToken = default);
 }

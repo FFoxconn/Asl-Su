@@ -13,7 +13,8 @@ public class CourierService(AslSuDbContext dbContext, IPasswordHasher passwordHa
     public async Task<IReadOnlyList<CourierDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await dbContext.Couriers
             .OrderBy(c => c.Name)
-            .Select(c => new CourierDto(c.Id, c.Name, c.Phone, c.IsActive, c.UserId != null))
+            .Select(c => new CourierDto(
+                c.Id, c.Name, c.Phone, c.IsActive, c.UserId != null, c.Latitude, c.Longitude, c.LocationUpdatedAt))
             .ToListAsync(cancellationToken);
 
     public async Task<CourierDto> CreateAsync(CreateCourierRequest request, CancellationToken cancellationToken = default)
@@ -39,7 +40,7 @@ public class CourierService(AslSuDbContext dbContext, IPasswordHasher passwordHa
 
         dbContext.Couriers.Add(courier);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new CourierDto(courier.Id, courier.Name, courier.Phone, courier.IsActive, courier.UserId != null);
+        return new CourierDto(courier.Id, courier.Name, courier.Phone, courier.IsActive, courier.UserId != null, null, null, null);
     }
 
     public async Task<CourierStatsDto?> GetStatsAsync(int courierId, CancellationToken cancellationToken = default)
@@ -74,6 +75,23 @@ public class CourierService(AslSuDbContext dbContext, IPasswordHasher passwordHa
     public async Task<CourierDto?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default) =>
         await dbContext.Couriers
             .Where(c => c.UserId == userId)
-            .Select(c => new CourierDto(c.Id, c.Name, c.Phone, c.IsActive, true))
+            .Select(c => new CourierDto(
+                c.Id, c.Name, c.Phone, c.IsActive, true, c.Latitude, c.Longitude, c.LocationUpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<bool> UpdateLocationAsync(
+        int userId, double latitude, double longitude, CancellationToken cancellationToken = default)
+    {
+        var courier = await dbContext.Couriers.FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
+        if (courier is null)
+        {
+            return false;
+        }
+
+        courier.Latitude = latitude;
+        courier.Longitude = longitude;
+        courier.LocationUpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

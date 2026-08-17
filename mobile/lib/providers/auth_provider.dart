@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/auth.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/location_service.dart';
 import '../services/session_storage.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -26,6 +29,9 @@ class AuthProvider extends ChangeNotifier {
     _session = await _sessionStorage.getSession();
     _isLoading = false;
     notifyListeners();
+    if (_session?.role == 'Courier') {
+      unawaited(_ensureLocationTracking());
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -33,16 +39,28 @@ class AuthProvider extends ChangeNotifier {
     await _sessionStorage.setSession(result);
     _session = result;
     notifyListeners();
+    if (result.role == 'Courier') {
+      unawaited(_ensureLocationTracking());
+    }
   }
 
   Future<void> logout() async {
     await _sessionStorage.clearSession();
     _session = null;
     notifyListeners();
+    unawaited(stopLocationTracking());
   }
 
   void _handleUnauthorized() {
     _session = null;
     notifyListeners();
+    unawaited(stopLocationTracking());
+  }
+
+  Future<void> _ensureLocationTracking() async {
+    final granted = await requestLocationPermissions();
+    if (granted) {
+      await startLocationTracking();
+    }
   }
 }
