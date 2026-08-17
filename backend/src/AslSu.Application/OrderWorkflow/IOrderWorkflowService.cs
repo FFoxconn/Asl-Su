@@ -16,5 +16,9 @@ public interface IOrderWorkflowService
 
     Task<OrderWorkflowActionResult> MarkPreparedAsync(int orderId, CancellationToken cancellationToken = default);
 
-    Task<OrderWorkflowActionResult> DeliverAsync(int orderId, CancellationToken cancellationToken = default);
+    /// <summary>Pass <paramref name="requiredCourierId"/> to only allow the transition when
+    /// the order is assigned to that courier (used when a Courier-role caller invokes this
+    /// themselves); null skips the ownership check, as Admin/Operator callers do.</summary>
+    Task<OrderWorkflowActionResult> DeliverAsync(
+        int orderId, int? requiredCourierId = null, CancellationToken cancellationToken = default);
 }

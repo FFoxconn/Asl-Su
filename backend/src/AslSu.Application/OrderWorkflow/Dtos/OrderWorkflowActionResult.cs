@@ -4,6 +4,7 @@ public enum OrderWorkflowError
 {
     NotFound,
     InvalidTransition,
+    Forbidden,
 }
 
 public record OrderWorkflowActionResult(

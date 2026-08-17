@@ -4,7 +4,10 @@ namespace AslSu.Application.Orders;
 
 public interface IOrderService
 {
-    Task<IReadOnlyList<OrderListItemDto>> GetAllAsync(CancellationToken cancellationToken = default);
+    /// <summary>Pass <paramref name="courierId"/> to scope results to a single courier's
+    /// assigned orders (used for the courier-facing "my deliveries" view); null returns
+    /// everything, as before.</summary>
+    Task<IReadOnlyList<OrderListItemDto>> GetAllAsync(int? courierId = null, CancellationToken cancellationToken = default);
     Task<OrderDetailDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>Assigns (or reassigns) the courier responsible for delivering an order.</summary>

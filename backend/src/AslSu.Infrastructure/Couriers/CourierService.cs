@@ -1,3 +1,4 @@
+using AslSu.Application.Abstractions;
 using AslSu.Application.Couriers;
 using AslSu.Application.Couriers.Dtos;
 using AslSu.Domain.Entities;
@@ -7,20 +8,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AslSu.Infrastructure.Couriers;
 
-public class CourierService(AslSuDbContext dbContext) : ICourierService
+public class CourierService(AslSuDbContext dbContext, IPasswordHasher passwordHasher) : ICourierService
 {
     public async Task<IReadOnlyList<CourierDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await dbContext.Couriers
             .OrderBy(c => c.Name)
-            .Select(c => new CourierDto(c.Id, c.Name, c.Phone, c.IsActive))
+            .Select(c => new CourierDto(c.Id, c.Name, c.Phone, c.IsActive, c.UserId != null))
             .ToListAsync(cancellationToken);
 
     public async Task<CourierDto> CreateAsync(CreateCourierRequest request, CancellationToken cancellationToken = default)
     {
         var courier = new Courier { Name = request.Name, Phone = request.Phone, IsActive = true };
+
+        if (!string.IsNullOrWhiteSpace(request.Email) && !string.IsNullOrWhiteSpace(request.Password))
+        {
+            var user = new User
+            {
+                Email = request.Email,
+                DisplayName = request.Name,
+                Role = UserRole.Courier,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            };
+            user.PasswordHash = passwordHasher.Hash(user, request.Password);
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            courier.UserId = user.Id;
+        }
+
         dbContext.Couriers.Add(courier);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new CourierDto(courier.Id, courier.Name, courier.Phone, courier.IsActive);
+        return new CourierDto(courier.Id, courier.Name, courier.Phone, courier.IsActive, courier.UserId != null);
     }
 
     public async Task<CourierStatsDto?> GetStatsAsync(int courierId, CancellationToken cancellationToken = default)
@@ -51,4 +70,10 @@ public class CourierService(AslSuDbContext dbContext) : ICourierService
             orders.Sum(o => o.InvoiceAmount ?? 0),
             recentOrders);
     }
+
+    public async Task<CourierDto?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default) =>
+        await dbContext.Couriers
+            .Where(c => c.UserId == userId)
+            .Select(c => new CourierDto(c.Id, c.Name, c.Phone, c.IsActive, true))
+            .FirstOrDefaultAsync(cancellationToken);
 }

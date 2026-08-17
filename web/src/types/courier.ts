@@ -3,6 +3,7 @@ export interface Courier {
   name: string;
   phone: string | null;
   isActive: boolean;
+  hasLogin: boolean;
 }
 
 export interface CourierOrderSummary {

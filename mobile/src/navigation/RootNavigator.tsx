@@ -5,11 +5,12 @@ import { useAuth } from '../auth/AuthContext';
 import { LoginScreen } from '../screens/Login/LoginScreen';
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
 import { ProductsScreen } from '../screens/Products/ProductsScreen';
+import { MyDeliveriesScreen } from '../screens/MyDeliveries/MyDeliveriesScreen';
 
 const Stack = createNativeStackNavigator();
 
 export function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { session, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -22,7 +23,9 @@ export function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {isAuthenticated ? (
+        {isAuthenticated && session?.role === 'Courier' ? (
+          <Stack.Screen name="MyDeliveries" component={MyDeliveriesScreen} options={{ headerShown: false }} />
+        ) : isAuthenticated ? (
           <>
             <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Products" component={ProductsScreen} options={{ title: 'Ürünler' }} />

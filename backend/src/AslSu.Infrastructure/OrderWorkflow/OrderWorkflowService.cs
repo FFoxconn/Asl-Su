@@ -23,22 +23,29 @@ public class OrderWorkflowService(AslSuDbContext dbContext, ITrendyolPackageStat
             orderId, WorkflowStatus.Preparing, WorkflowStatus.Prepared,
             (order, ct) => packageStatusClient.InvoicePackageAsync(order.PackageId, ct), cancellationToken);
 
-    public Task<OrderWorkflowActionResult> DeliverAsync(int orderId, CancellationToken cancellationToken = default) =>
+    public Task<OrderWorkflowActionResult> DeliverAsync(
+        int orderId, int? requiredCourierId = null, CancellationToken cancellationToken = default) =>
         TransitionAsync(
             orderId, WorkflowStatus.Prepared, WorkflowStatus.Delivered,
-            (order, ct) => packageStatusClient.ShipPackageAsync(order.PackageId, ct), cancellationToken);
+            (order, ct) => packageStatusClient.ShipPackageAsync(order.PackageId, ct), cancellationToken, requiredCourierId);
 
     private async Task<OrderWorkflowActionResult> TransitionAsync(
         int orderId,
         WorkflowStatus expectedCurrent,
         WorkflowStatus next,
         Func<Order, CancellationToken, Task<TrendyolPackageActionOutcome>>? notifyTrendyol,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? requiredCourierId = null)
     {
         var order = await dbContext.Orders.FindAsync([orderId], cancellationToken);
         if (order is null)
         {
             return OrderWorkflowActionResult.Fail(OrderWorkflowError.NotFound);
+        }
+
+        if (requiredCourierId.HasValue && order.CourierId != requiredCourierId.Value)
+        {
+            return OrderWorkflowActionResult.Fail(OrderWorkflowError.Forbidden);
         }
 
         if (order.WorkflowStatus != expectedCurrent)

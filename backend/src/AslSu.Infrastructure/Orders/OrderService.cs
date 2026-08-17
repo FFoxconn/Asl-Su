@@ -8,9 +8,16 @@ namespace AslSu.Infrastructure.Orders;
 
 public class OrderService(AslSuDbContext dbContext) : IOrderService
 {
-    public async Task<IReadOnlyList<OrderListItemDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<OrderListItemDto>> GetAllAsync(
+        int? courierId = null, CancellationToken cancellationToken = default)
     {
-        var orders = await dbContext.Orders.OrderByDescending(o => o.OrderDate).ToListAsync(cancellationToken);
+        var query = dbContext.Orders.AsQueryable();
+        if (courierId.HasValue)
+        {
+            query = query.Where(o => o.CourierId == courierId.Value);
+        }
+
+        var orders = await query.OrderByDescending(o => o.OrderDate).ToListAsync(cancellationToken);
         var customerIds = orders.Where(o => o.CustomerId.HasValue).Select(o => o.CustomerId!.Value).Distinct().ToList();
         var customers = await dbContext.Customers
             .Where(c => customerIds.Contains(c.Id))

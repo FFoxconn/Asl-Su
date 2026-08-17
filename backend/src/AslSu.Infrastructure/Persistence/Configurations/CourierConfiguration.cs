@@ -13,5 +13,10 @@ public class CourierConfiguration : IEntityTypeConfiguration<Courier>
 
         builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
         builder.Property(c => c.Phone).HasMaxLength(50);
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
