@@ -11,7 +11,12 @@ import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeLocationService();
+  try {
+    await initializeLocationService();
+  } catch (_) {
+    // Location tracking is a courier-only extra — a setup failure here must
+    // never take the whole app down with it.
+  }
   runApp(const AslSuApp());
 }
 

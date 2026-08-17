@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -14,7 +15,23 @@ const _notificationChannelId = 'aslsu_location';
 const _notificationId = 9001;
 
 /// Configures the background service. Call once, before runApp().
+///
+/// The notification channel MUST exist on the OS before the service tries to
+/// post its foreground notification — skipping this makes Android kill the
+/// whole app with CannotPostForegroundServiceNotificationException the moment
+/// the service starts (this bit us once; don't remove it).
 Future<void> initializeLocationService() async {
+  const channel = AndroidNotificationChannel(
+    _notificationChannelId,
+    'Asl-Su Konum Takibi',
+    description: 'Kurye konumu paylaşılırken gösterilen bildirim.',
+    importance: Importance.low,
+  );
+
+  await FlutterLocalNotificationsPlugin()
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
   final service = FlutterBackgroundService();
   await service.configure(
     androidConfiguration: AndroidConfiguration(
