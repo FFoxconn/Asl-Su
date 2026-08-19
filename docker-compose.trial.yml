@@ -1,0 +1,38 @@
+services:
+  # Isolated demo/trial stack for a prospective customer: same SQL Server
+  # instance as production but its own database, so nothing here can ever
+  # read or write the real business data. Bring up together with the prod
+  # file so it shares that sqlserver container:
+  #   docker compose -f docker-compose.prod.yml -f docker-compose.trial.yml up -d --build sqlserver api-trial web-trial
+  api-trial:
+    build:
+      context: .
+      dockerfile: backend/src/AslSu.Api/Dockerfile
+    container_name: aslsu-trial-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__Default: "Server=sqlserver;Database=AslSuTrial;User Id=sa;Password=${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env};TrustServerCertificate=True"
+      Jwt__SigningKey: "${TRIAL_JWT_SIGNING_KEY:?set TRIAL_JWT_SIGNING_KEY in .env}"
+      Seed__AdminEmail: "${TRIAL_SEED_ADMIN_EMAIL:?set TRIAL_SEED_ADMIN_EMAIL in .env}"
+      Seed__AdminPassword: "${TRIAL_SEED_ADMIN_PASSWORD:?set TRIAL_SEED_ADMIN_PASSWORD in .env}"
+      # Trendyol Go left unconfigured on purpose — the trial customer has no
+      # Trendyol account tied to this stack; sync stays disabled harmlessly.
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web-trial:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        VITE_GOOGLE_MAPS_API_KEY: "${VITE_GOOGLE_MAPS_API_KEY:-}"
+    container_name: aslsu-trial-web
+    environment:
+      API_HOST: api-trial
+    depends_on:
+      - api-trial
+    ports:
+      - "127.0.0.1:8082:80"
+    restart: unless-stopped
